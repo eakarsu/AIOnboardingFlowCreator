@@ -3,7 +3,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../../../.env'
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_BASE_URL = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-haiku-4.5';
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-3-5-sonnet-20241022';
 
 const callOpenRouter = async (messages, model = OPENROUTER_MODEL) => {
   const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {

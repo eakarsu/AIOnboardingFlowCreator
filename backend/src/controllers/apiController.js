@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { agencyContext, agencyFilter } = require('../middleware/agencyContext');
 
 // Generic CRUD operations factory with pagination, search, filter, sort
 const createCrudController = (tableName, options = {}) => {
@@ -7,7 +8,8 @@ const createCrudController = (tableName, options = {}) => {
     filterableColumns = [],
     quotedColumns = [],
     defaultSort = 'created_at',
-    idField = 'id'
+    idField = 'id',
+    agencyColumn = null   // e.g. 'agency_id' — when set, getAll/getById filter by req.agencyId
   } = options;
 
   const quoteCol = (col) => quotedColumns.includes(col) ? `"${col}"` : col;
@@ -22,9 +24,15 @@ const createCrudController = (tableName, options = {}) => {
         const params = [];
         const conditions = [];
 
+        // Agency isolation — only show rows that belong to the caller's agency
+        if (agencyColumn && req.agencyId) {
+          params.push(req.agencyId);
+          conditions.push(`${agencyColumn} = $${params.length}`);
+        }
+
         // Search
         if (search && searchableColumns.length > 0) {
-          const searchConditions = searchableColumns.map((col, i) => {
+          const searchConditions = searchableColumns.map((col) => {
             params.push(`%${search}%`);
             return `${quoteCol(col)}::text ILIKE $${params.length}`;
           });
@@ -91,7 +99,13 @@ const createCrudController = (tableName, options = {}) => {
     getById: async (req, res) => {
       try {
         const { id } = req.params;
-        const result = await pool.query(`SELECT * FROM ${tableName} WHERE ${idField} = $1`, [id]);
+        let q = `SELECT * FROM ${tableName} WHERE ${idField} = $1`;
+        const p = [id];
+        if (agencyColumn && req.agencyId) {
+          p.push(req.agencyId);
+          q += ` AND ${agencyColumn} = $${p.length}`;
+        }
+        const result = await pool.query(q, p);
 
         if (result.rows.length === 0) {
           return res.status(404).json({ error: 'Not found' });
@@ -179,16 +193,18 @@ const flowsController = {
   ...createCrudController('onboarding_flows', {
     searchableColumns: ['name', 'description', 'target_audience'],
     filterableColumns: ['status'],
-    defaultSort: 'created_at'
+    defaultSort: 'created_at',
+    agencyColumn: 'agency_id'
   }),
 
   create: async (req, res) => {
     try {
       const { name, description, status, target_audience, trigger_event, total_steps } = req.body;
+      const agencyId = req.agencyId || null;
       const result = await pool.query(
-        `INSERT INTO onboarding_flows (name, description, status, target_audience, trigger_event, total_steps, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-        [name, description, status || 'draft', target_audience, trigger_event, total_steps || 0, req.user?.id || 1]
+        `INSERT INTO onboarding_flows (name, description, status, target_audience, trigger_event, total_steps, created_by, agency_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+        [name, description, status || 'draft', target_audience, trigger_event, total_steps || 0, req.user?.id || 1, agencyId]
       );
       res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -201,11 +217,16 @@ const flowsController = {
     try {
       const { id } = req.params;
       const { name, description, status, target_audience, trigger_event, total_steps, completion_rate } = req.body;
+      // Scope the update to the caller's agency when available
+      const agencyId = req.agencyId || null;
+      const agencyClause = agencyId ? ' AND agency_id = $9' : '';
+      const params = [name, description, status, target_audience, trigger_event, total_steps, completion_rate, id];
+      if (agencyId) params.push(agencyId);
       const result = await pool.query(
         `UPDATE onboarding_flows SET name = $1, description = $2, status = $3, target_audience = $4,
          trigger_event = $5, total_steps = $6, completion_rate = $7, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $8 RETURNING *`,
-        [name, description, status, target_audience, trigger_event, total_steps, completion_rate, id]
+         WHERE id = $8${agencyClause} RETURNING *`,
+        params
       );
       if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Flow not found' });
@@ -229,10 +250,20 @@ const stepsController = {
   getByFlowId: async (req, res) => {
     try {
       const { flowId } = req.params;
-      const result = await pool.query(
-        'SELECT * FROM flow_steps WHERE flow_id = $1 ORDER BY step_order',
-        [flowId]
-      );
+      const agencyId = req.agencyId || null;
+      let q, p;
+      if (agencyId) {
+        // Verify the flow belongs to this agency before returning its steps
+        q = `SELECT fs.* FROM flow_steps fs
+             INNER JOIN onboarding_flows f ON f.id = fs.flow_id
+             WHERE fs.flow_id = $1 AND f.agency_id = $2
+             ORDER BY fs.step_order`;
+        p = [flowId, agencyId];
+      } else {
+        q = 'SELECT * FROM flow_steps WHERE flow_id = $1 ORDER BY step_order';
+        p = [flowId];
+      }
+      const result = await pool.query(q, p);
       res.json(result.rows);
     } catch (error) {
       console.error('Error fetching steps:', error);
@@ -397,10 +428,20 @@ const analyticsController = {
   getByFlowId: async (req, res) => {
     try {
       const { flowId } = req.params;
-      const result = await pool.query(
-        'SELECT * FROM analytics WHERE flow_id = $1 ORDER BY date DESC',
-        [flowId]
-      );
+      const agencyId = req.agencyId || null;
+      let q, p;
+      if (agencyId) {
+        // Only return analytics for flows that belong to this agency
+        q = `SELECT a.* FROM analytics a
+             INNER JOIN onboarding_flows f ON f.id = a.flow_id
+             WHERE a.flow_id = $1 AND f.agency_id = $2
+             ORDER BY a.date DESC`;
+        p = [flowId, agencyId];
+      } else {
+        q = 'SELECT * FROM analytics WHERE flow_id = $1 ORDER BY date DESC';
+        p = [flowId];
+      }
+      const result = await pool.query(q, p);
       res.json(result.rows);
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -1061,6 +1102,132 @@ const aiProgressController = {
   }
 };
 
+// ─── A/B Test winner calculation ───────────────────────────────────────────────
+const calculateABWinner = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Fetch the A/B test
+    const testResult = await pool.query('SELECT * FROM ab_tests WHERE id = $1', [id]);
+    if (testResult.rows.length === 0) {
+      return res.status(404).json({ error: 'A/B test not found' });
+    }
+    const test = testResult.rows[0];
+
+    // Count analytics events for each variant (uses flow_id if set)
+    // Variant A and B are distinguished by dimension_value
+    const flowId = test.flow_id;
+    const variantACount = await pool.query(
+      `SELECT COUNT(*)::int as cnt FROM analytics
+       WHERE flow_id = $1 AND dimension = 'variant' AND dimension_value = 'A'`,
+      [flowId]
+    );
+    const variantBCount = await pool.query(
+      `SELECT COUNT(*)::int as cnt FROM analytics
+       WHERE flow_id = $1 AND dimension = 'variant' AND dimension_value = 'B'`,
+      [flowId]
+    );
+
+    const aCount = variantACount.rows[0]?.cnt || 0;
+    const bCount = variantBCount.rows[0]?.cnt || 0;
+
+    // Pick winner by higher count (or A on tie)
+    const winner = bCount > aCount ? 'B' : 'A';
+    const winnerRate = aCount + bCount > 0
+      ? ((winner === 'A' ? aCount : bCount) / (aCount + bCount) * 100).toFixed(1)
+      : null;
+
+    // Update the ab_tests row
+    await pool.query(
+      `UPDATE ab_tests SET winner = $1, winner_determined_at = CURRENT_TIMESTAMP, status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+      [winner, id]
+    );
+
+    res.json({
+      testId: Number(id),
+      winner,
+      variantAEvents: aCount,
+      variantBEvents: bCount,
+      winnerRate: winnerRate ? parseFloat(winnerRate) : null,
+      message: `Winner determined: Variant ${winner} with ${winner === 'A' ? aCount : bCount} events`
+    });
+  } catch (error) {
+    console.error('calculateABWinner error:', error);
+    res.status(500).json({ error: 'Internal server error', requestId: req.requestId });
+  }
+};
+
+// ─── Trigger fire ────────────────────────────────────────────────────────────
+// Ensure trigger_events table exists
+pool.query(`
+  CREATE TABLE IF NOT EXISTS trigger_events (
+    id SERIAL PRIMARY KEY,
+    trigger_id INTEGER REFERENCES triggers(id) ON DELETE CASCADE,
+    fired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB
+  )
+`).catch(console.error);
+
+// Also ensure ab_tests has winner_determined_at column
+pool.query(`ALTER TABLE ab_tests ADD COLUMN IF NOT EXISTS winner_determined_at TIMESTAMP`).catch(console.error);
+pool.query(`ALTER TABLE onboarding_flows ADD COLUMN IF NOT EXISTS site_key VARCHAR(255), ADD COLUMN IF NOT EXISTS agency_id INTEGER`).catch(console.error);
+
+const fireTrigger = async (req, res) => {
+  const { id } = req.params;
+  const metadata = req.body?.metadata || {};
+  try {
+    const triggerResult = await pool.query('SELECT * FROM triggers WHERE id = $1', [id]);
+    if (triggerResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Trigger not found' });
+    }
+    const trigger = triggerResult.rows[0];
+
+    // Evaluate conditions (simple check — conditions is JSONB)
+    const conditions = trigger.conditions || {};
+    const conditionsMet = Object.keys(conditions).length === 0
+      ? true
+      : Object.entries(conditions).every(([key, val]) => {
+          return metadata[key] !== undefined ? String(metadata[key]) === String(val) : false;
+        });
+
+    if (!conditionsMet) {
+      return res.json({ fired: false, message: 'Trigger conditions not met', conditions });
+    }
+
+    // Record the firing
+    const eventResult = await pool.query(
+      `INSERT INTO trigger_events (trigger_id, metadata) VALUES ($1, $2) RETURNING *`,
+      [id, JSON.stringify(metadata)]
+    );
+
+    // Increment fire_count
+    await pool.query(
+      `UPDATE triggers SET fire_count = COALESCE(fire_count, 0) + 1, last_fired = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+      [id]
+    );
+
+    // Create a notification if trigger has actions
+    const actions = trigger.actions || {};
+    if (actions.notify) {
+      await pool.query(
+        `INSERT INTO notifications (title, message, type, created_at) VALUES ($1, $2, 'trigger', CURRENT_TIMESTAMP)`,
+        [`Trigger fired: ${trigger.name}`, `Trigger "${trigger.name}" was fired at ${new Date().toISOString()}`]
+      ).catch(() => {}); // non-fatal
+    }
+
+    res.json({
+      fired: true,
+      triggerId: Number(id),
+      triggerName: trigger.name,
+      eventId: eventResult.rows[0].id,
+      firedAt: eventResult.rows[0].fired_at,
+      metadata
+    });
+  } catch (error) {
+    console.error('fireTrigger error:', error);
+    res.status(500).json({ error: 'Internal server error', requestId: req.requestId });
+  }
+};
+
 // Dashboard Stats
 const getDashboardStats = async (req, res) => {
   try {
@@ -1132,5 +1299,7 @@ module.exports = {
   trainingRecommendationsController,
   aiChecklistsController,
   aiProgressController,
-  getDashboardStats
+  getDashboardStats,
+  calculateABWinner,
+  fireTrigger
 };

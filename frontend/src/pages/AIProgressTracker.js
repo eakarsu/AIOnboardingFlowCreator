@@ -62,6 +62,29 @@ const ProgressForm = ({ data, onChange }) => {
     }
   };
 
+  // Apply pass 5 — forward-looking projection (separate from analyze-progress).
+  const predictWithAI = async () => {
+    setAiLoading(true);
+    try {
+      const response = await aiGenerateAPI.predictProgress({
+        user_name: data.user_name,
+        goal_type: data.goal_type,
+        goal_description: data.goal_description,
+        current_value: data.current_value,
+        target_value: data.target_value,
+        start_date: data.start_date,
+        days_horizon: 30,
+      });
+      setAiResult(response.data.analysis);
+    } catch (error) {
+      const msg = error.response?.data?.error || error.message || 'Failed';
+      const detail = error.response?.data?.detail;
+      setAiResult({ insights: detail ? `${msg}: ${detail}` : msg });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '10px 12px', background: '#f8fafc', borderRadius: 8, marginBottom: 16 }}>
@@ -120,8 +143,12 @@ const ProgressForm = ({ data, onChange }) => {
         </select>
       </div>
       <button type="button" onClick={analyzeWithAI} disabled={aiLoading || !data.goal_description}
-        style={{ width: '100%', padding: '12px', marginBottom: 16, background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 600 }}>
+        style={{ width: '100%', padding: '12px', marginBottom: 8, background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 600 }}>
         <Sparkles size={18} /> {aiLoading ? 'Analyzing...' : 'Get AI Analysis'}
+      </button>
+      <button type="button" onClick={predictWithAI} disabled={aiLoading || !data.goal_type || !data.target_value}
+        style={{ width: '100%', padding: '12px', marginBottom: 16, background: 'linear-gradient(135deg, #0ea5e9, #6366f1)', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 600 }}>
+        <Target size={18} /> {aiLoading ? 'Predicting...' : 'Predict Progress (30d)'}
       </button>
       {aiResult && (
         <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', padding: 16, borderRadius: 12 }}>

@@ -278,6 +278,17 @@ export const aiProgressAPI = {
   bulkDelete: (ids) => api.post('/ai-progress/bulk-delete', { ids }),
 };
 
+// Funnel Analytics
+export const funnelAPI = {
+  getFunnel: (flowId) => api.get(`/analytics/funnel/${flowId}`),
+};
+
+// A/B Test winner calculation
+export const calculateABWinner = (id) => api.post(`/ab-tests/${id}/calculate-winner`);
+
+// Trigger fire
+export const fireTrigger = (id, metadata) => api.post(`/triggers/${id}/fire`, { metadata });
+
 // AI Generation
 export const aiGenerateAPI = {
   welcomeMessage: (data) => api.post('/ai/generate/welcome', data),
@@ -295,6 +306,9 @@ export const aiGenerateAPI = {
   generateTrainingPlan: (data) => api.post('/ai/generate/training-plan', data),
   generateAIChecklist: (data) => api.post('/ai/generate/ai-checklist', data),
   analyzeProgress: (data) => api.post('/ai/analyze/progress', data),
+  // Apply pass 5 backlog
+  predictProgress: (data) => api.post('/ai/predict-progress', data),
+  complianceAudit: (data) => api.post('/ai/compliance-audit', data),
 };
 
 export default api;

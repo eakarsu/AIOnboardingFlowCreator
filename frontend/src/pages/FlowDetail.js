@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Edit2, Trash2, Plus, GripVertical,
-  CheckCircle, Clock, Sparkles, BarChart3, Save, Loader
+  CheckCircle, Clock, Sparkles, BarChart3, Save, Loader, Code
 } from 'lucide-react';
 import { flowsAPI, stepsAPI, aiGenerateAPI } from '../services/api';
 import { Modal } from '../components/DataTable';
@@ -485,6 +485,32 @@ const FlowDetail = () => {
           </div>
         </div>
       )}
+
+      {/* Flow SDK Section */}
+      <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 20, marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <Code size={18} color="#6366f1" />
+          <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>Embed This Flow (SDK)</h3>
+        </div>
+        <p style={{ fontSize: 13, color: '#64748b', marginBottom: 12 }}>
+          Add this script to any external website to display this onboarding flow automatically.
+        </p>
+        <div style={{ background: '#1e293b', borderRadius: 8, padding: '12px 16px', fontFamily: 'monospace', fontSize: 13, color: '#e2e8f0', position: 'relative' }}>
+          {`<script src="http://localhost:3001/flow-sdk.js" data-site-key="${flow?.id}"></script>`}
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`<script src="http://localhost:3001/flow-sdk.js" data-site-key="${flow?.id}"></script>`);
+              alert('Copied to clipboard!');
+            }}
+            style={{ position: 'absolute', top: 8, right: 8, background: '#6366f1', color: 'white', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+          >
+            Copy
+          </button>
+        </div>
+        <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 8 }}>
+          The SDK will automatically show the flow steps as modal overlays. See the SDK Docs page for full integration guide.
+        </p>
+      </div>
 
       {/* Steps */}
       <div style={{

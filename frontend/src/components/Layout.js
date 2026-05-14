@@ -6,7 +6,8 @@ import {
   LayoutDashboard, GitBranch, Users, FileText, Sparkles,
   BarChart3, Plug, MessageCircle, CheckSquare, TrendingUp,
   FlaskConical, Zap, UserCog, Bell, LogOut, Menu, X, ChevronDown,
-  CalendarCheck, UserPlus, ThumbsUp, GraduationCap, ClipboardCheck, Target, User
+  CalendarCheck, UserPlus, ThumbsUp, GraduationCap, ClipboardCheck, Target, User,
+  TrendingDown, Book
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -52,7 +53,26 @@ const Layout = ({ children }) => {
     { path: '/ai-progress', icon: Target, label: 'AI Progress Tracker' },
     { path: '/feedback-collector', icon: ThumbsUp, label: 'AI Feedback' },
     { path: '/training-recommender', icon: GraduationCap, label: 'AI Training' },
-  ];
+    { path: '/funnel-analytics', icon: TrendingDown, label: 'Funnel Analytics' },
+    { path: '/sdk-docs', icon: Book, label: 'SDK Docs' },
+  // === Batch 06 Gaps & Frontend Mounts ===
+  { path: '/cf-ai-flow-generator-from-jd', label: 'AI flow generator from JD', icon: '✨' },
+  { path: '/cf-real-time-feedback-loop', label: 'Real-time feedback loop', icon: '✨' },
+  { path: '/cf-adaptive-pacing', label: 'Adaptive pacing', icon: '✨' },
+  { path: '/cf-department-specific-content-recommendation', label: 'Department-specific content recommendation', icon: '✨' },
+  { path: '/cf-onboarding-compliance-auditing', label: 'Onboarding compliance auditing', icon: '✨' },
+  { path: '/gap-no-cohort', label: 'No `/cohort', icon: '✨' },
+  { path: '/gap-no-sentiment', label: 'No `/sentiment', icon: '✨' },
+  { path: '/gap-no-auto', label: 'No `/auto', icon: '✨' },
+  { path: '/gap-no-role', label: 'No `/role', icon: '✨' },
+  { path: '/gap-backend-logic-concentrated-in-single-index-js', label: 'Backend logic concentrated in single index.js', icon: '✨' },
+  { path: '/gap-missing-dedicated-checklist-routes-only-ai-generat', label: 'Missing dedicated checklist routes (only AI generation, not CRUD)', icon: '✨' },
+  { path: '/gap-no-hr-system-integrations-workday-bamboohr', label: 'No HR system integrations (Workday, BambooHR)', icon: '✨' },
+  { path: '/gap-no-webhooks-for-outbound-triggers-to-customer-syst', label: 'No webhooks for outbound triggers to customer systems', icon: '✨' },
+  { path: '/gap-limited-reporting-export-pdf-csv', label: 'Limited reporting export (PDF/CSV)', icon: '✨' },
+  { path: '/gap-no-rbac-granularity-beyond-admin-manager', label: 'No RBAC granularity beyond admin/manager', icon: '✨' },
+  { path: '/gap-no-file-upload-for-onboarding-documents-videos', label: 'No file upload for onboarding documents/videos', icon: '✨' }
+];
 
   const sidebarWidth = sidebarOpen ? 260 : (isMobile ? 0 : 72);
 

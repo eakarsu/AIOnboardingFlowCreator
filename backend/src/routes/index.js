@@ -3,6 +3,7 @@ const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const { authorize } = require('../middleware/rbac');
 const { validatePasswordStrength } = require('../middleware/validation');
+const { agencyContext } = require('../middleware/agencyContext');
 const {
   login, register, getProfile, updateProfile,
   changePassword, forgotPassword, resetPassword, verifyEmail, logout
@@ -13,10 +14,15 @@ const {
   checklistsController, progressController, abTestsController, triggersController,
   personalizationController, notificationsController, ptoRequestsController,
   mentorMatchesController, feedbackController, trainingRecommendationsController,
-  aiChecklistsController, aiProgressController, getDashboardStats
+  aiChecklistsController, aiProgressController, getDashboardStats,
+  calculateABWinner, fireTrigger
 } = require('../controllers/apiController');
 const { createExportController } = require('../controllers/exportController');
 const aiController = require('../controllers/aiController');
+const aiBacklogController = require('../controllers/aiBacklogController');
+const { getFlowBySiteKey, recordSdkEvent } = require('../controllers/sdkController');
+const { ingestEvent } = require('../controllers/eventsController');
+const { getFunnelAnalytics } = require('../controllers/funnelController');
 
 // Auth routes (public)
 router.post('/auth/login', login);
@@ -35,8 +41,11 @@ router.post('/auth/logout', authenticateToken, logout);
 router.get('/dashboard/stats', authenticateToken, getDashboardStats);
 
 // Helper to register CRUD + export + bulk routes for a resource
-const registerResourceRoutes = (path, controller, tableName) => {
+// Pass agencyScoped=true for the 3 key resources (flows, steps, analytics) that enforce
+// per-agency data isolation via agencyContext middleware.
+const registerResourceRoutes = (path, controller, tableName, agencyScoped = false) => {
   const exportCtrl = createExportController(tableName);
+  const scopeMiddleware = agencyScoped ? [authenticateToken, agencyContext] : [authenticateToken];
 
   // Export routes MUST come before /:id
   router.get(`/${path}/export/csv`, authenticateToken, exportCtrl.exportCSV);
@@ -46,21 +55,22 @@ const registerResourceRoutes = (path, controller, tableName) => {
   router.post(`/${path}/bulk-delete`, authenticateToken, authorize('admin', 'manager'), controller.bulkDelete);
   router.put(`/${path}/bulk`, authenticateToken, authorize('admin', 'manager'), controller.bulkUpdate);
 
-  // Standard CRUD
-  router.get(`/${path}`, authenticateToken, controller.getAll);
-  router.get(`/${path}/:id`, authenticateToken, controller.getById);
-  if (controller.create) router.post(`/${path}`, authenticateToken, controller.create);
-  if (controller.update) router.put(`/${path}/:id`, authenticateToken, controller.update);
+  // Standard CRUD (agency-scoped routes include the agencyContext middleware)
+  router.get(`/${path}`, ...scopeMiddleware, controller.getAll);
+  router.get(`/${path}/:id`, ...scopeMiddleware, controller.getById);
+  if (controller.create) router.post(`/${path}`, ...scopeMiddleware, controller.create);
+  if (controller.update) router.put(`/${path}/:id`, ...scopeMiddleware, controller.update);
   router.delete(`/${path}/:id`, authenticateToken, authorize('admin', 'manager'), controller.delete);
 };
 
 // Register all resource routes
-registerResourceRoutes('flows', flowsController, 'onboarding_flows');
-registerResourceRoutes('steps', stepsController, 'flow_steps');
+// The 3 most important query resources are agency-scoped for multi-tenant isolation.
+registerResourceRoutes('flows', flowsController, 'onboarding_flows', true);
+registerResourceRoutes('steps', stepsController, 'flow_steps', true);
 registerResourceRoutes('segments', segmentsController, 'user_segments');
 registerResourceRoutes('templates', templatesController, 'templates');
 registerResourceRoutes('ai-content', aiContentController, 'ai_content');
-registerResourceRoutes('analytics', analyticsController, 'analytics');
+registerResourceRoutes('analytics', analyticsController, 'analytics', true);
 registerResourceRoutes('integrations', integrationsController, 'integrations');
 registerResourceRoutes('tooltips', tooltipsController, 'tooltips');
 registerResourceRoutes('checklists', checklistsController, 'checklists');
@@ -76,9 +86,9 @@ registerResourceRoutes('training-recommendations', trainingRecommendationsContro
 registerResourceRoutes('ai-checklists', aiChecklistsController, 'ai_checklists');
 registerResourceRoutes('ai-progress', aiProgressController, 'ai_progress');
 
-// Additional custom routes
-router.get('/flows/:flowId/steps', authenticateToken, stepsController.getByFlowId);
-router.get('/flows/:flowId/analytics', authenticateToken, analyticsController.getByFlowId);
+// Additional custom routes (agency-scoped for the key resource relationships)
+router.get('/flows/:flowId/steps', authenticateToken, agencyContext, stepsController.getByFlowId);
+router.get('/flows/:flowId/analytics', authenticateToken, agencyContext, analyticsController.getByFlowId);
 router.get('/users/:userId/progress', authenticateToken, progressController.getByUserId);
 
 // AI Generation Routes (OpenRouter)
@@ -99,5 +109,28 @@ router.post('/ai/analyze/feedback', authenticateToken, aiController.analyzeFeedb
 router.post('/ai/generate/training-plan', authenticateToken, aiController.generateTrainingPlan);
 router.post('/ai/generate/ai-checklist', authenticateToken, aiController.generateAIChecklist);
 router.post('/ai/analyze/progress', authenticateToken, aiController.analyzeProgress);
+
+// Apply pass 5 backlog (additive, 503 + missing OPENROUTER_API_KEY when key absent)
+router.post('/ai/predict-progress', authenticateToken, aiBacklogController.predictProgress);
+router.post('/ai/compliance-audit', authenticateToken, aiBacklogController.complianceAudit);
+
+// ─── A/B Test winner calculation ─────────────────────────────────────────────
+router.post('/ab-tests/:id/calculate-winner', authenticateToken, calculateABWinner);
+
+// ─── Trigger fire ─────────────────────────────────────────────────────────────
+router.post('/triggers/:id/fire', authenticateToken, fireTrigger);
+
+// ─── SDK Routes (public — no auth) ────────────────────────────────────────────
+// These endpoints are called from the embeddable flow-sdk.js script.
+router.get('/sdk/flow', getFlowBySiteKey);
+router.post('/sdk/events', recordSdkEvent);
+
+// ─── Event Ingestion (public — no auth) ───────────────────────────────────────
+// Receives arbitrary events from any integrated site; validates site key then
+// evaluates trigger conditions.
+router.post('/events/ingest', ingestEvent);
+
+// ─── Funnel Analytics (authenticated) ─────────────────────────────────────────
+router.get('/analytics/funnel/:flowId', authenticateToken, agencyContext, getFunnelAnalytics);
 
 module.exports = router;

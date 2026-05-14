@@ -358,7 +358,54 @@ const createTables = async () => {
       status VARCHAR(50) DEFAULT 'in_progress',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`
+    )`,
+
+    // Agencies table for multi-tenant isolation
+    `CREATE TABLE IF NOT EXISTS agencies (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      slug VARCHAR(100) UNIQUE NOT NULL,
+      site_key VARCHAR(255) UNIQUE NOT NULL,
+      plan VARCHAR(50) DEFAULT 'free',
+      settings JSONB,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+
+    // Add agency_id to users if not exists
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS agency_id INTEGER REFERENCES agencies(id)`,
+
+    // Add agency_id to onboarding_flows if not exists
+    `ALTER TABLE onboarding_flows ADD COLUMN IF NOT EXISTS agency_id INTEGER REFERENCES agencies(id)`,
+
+    // Add site_key to onboarding_flows for SDK lookup
+    `ALTER TABLE onboarding_flows ADD COLUMN IF NOT EXISTS site_key VARCHAR(255)`,
+
+    // Events table for real-time event ingestion
+    `CREATE TABLE IF NOT EXISTS events (
+      id SERIAL PRIMARY KEY,
+      site_key VARCHAR(255) NOT NULL,
+      agency_id INTEGER REFERENCES agencies(id),
+      event_type VARCHAR(100) NOT NULL,
+      user_id VARCHAR(255),
+      properties JSONB,
+      flow_id INTEGER REFERENCES onboarding_flows(id),
+      step_id INTEGER REFERENCES flow_steps(id),
+      triggered_trigger_ids INTEGER[],
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+
+    // Index for fast event lookups
+    `CREATE INDEX IF NOT EXISTS idx_events_site_key ON events(site_key)`,
+    `CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_progress_flow_step ON progress_tracking(flow_id, current_step)`,
+
+    // Unique constraint required for the ON CONFLICT upsert in the SDK event recorder
+    `ALTER TABLE progress_tracking ADD CONSTRAINT IF NOT EXISTS uq_progress_user_flow UNIQUE (user_id, flow_id)`,
+
+    // Index for agency-scoped flow lookups
+    `CREATE INDEX IF NOT EXISTS idx_flows_agency_id ON onboarding_flows(agency_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_flows_site_key ON onboarding_flows(site_key)`
   ];
 
   for (const query of queries) {

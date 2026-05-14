@@ -27,7 +27,27 @@ import AIProgressTracker from './pages/AIProgressTracker';
 import FeedbackCollector from './pages/FeedbackCollector';
 import TrainingRecommender from './pages/TrainingRecommender';
 import Profile from './pages/Profile';
+import FunnelAnalytics from './pages/FunnelAnalytics';
+import SDKDocs from './pages/SDKDocs';
+import ComplianceAudit from './pages/ComplianceAudit';
 
+// // === Batch 06 Gaps & Frontend Mounts ===
+import CFAiFlowGeneratorFromJdPage from './pages/CFAiFlowGeneratorFromJdPage';
+import CFRealTimeFeedbackLoopPage from './pages/CFRealTimeFeedbackLoopPage';
+import CFAdaptivePacingPage from './pages/CFAdaptivePacingPage';
+import CFDepartmentSpecificContentRecommendationPage from './pages/CFDepartmentSpecificContentRecommendationPage';
+import CFOnboardingComplianceAuditingPage from './pages/CFOnboardingComplianceAuditingPage';
+import GapNoCohortPage from './pages/GapNoCohortPage';
+import GapNoSentimentPage from './pages/GapNoSentimentPage';
+import GapNoAutoPage from './pages/GapNoAutoPage';
+import GapNoRolePage from './pages/GapNoRolePage';
+import GapBackendLogicConcentratedInSingleIndexJsPage from './pages/GapBackendLogicConcentratedInSingleIndexJsPage';
+import GapMissingDedicatedChecklistRoutesOnlyAiGeneratPage from './pages/GapMissingDedicatedChecklistRoutesOnlyAiGeneratPage';
+import GapNoHrSystemIntegrationsWorkdayBamboohrPage from './pages/GapNoHrSystemIntegrationsWorkdayBamboohrPage';
+import GapNoWebhooksForOutboundTriggersToCustomerSystPage from './pages/GapNoWebhooksForOutboundTriggersToCustomerSystPage';
+import GapLimitedReportingExportPdfCsvPage from './pages/GapLimitedReportingExportPdfCsvPage';
+import GapNoRbacGranularityBeyondAdminManagerPage from './pages/GapNoRbacGranularityBeyondAdminManagerPage';
+import GapNoFileUploadForOnboardingDocumentsVideosPage from './pages/GapNoFileUploadForOnboardingDocumentsVideosPage';
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -101,7 +121,28 @@ const App = () => {
                           <Route path="/feedback-collector" element={<FeedbackCollector />} />
                           <Route path="/training-recommender" element={<TrainingRecommender />} />
                           <Route path="/profile" element={<Profile />} />
-                        </Routes>
+                          <Route path="/funnel-analytics" element={<FunnelAnalytics />} />
+                          <Route path="/sdk-docs" element={<SDKDocs />} />
+                          <Route path="/compliance-audit" element={<ComplianceAudit />} />
+                        
+          {/* // === Batch 06 Gaps & Frontend Mounts === */}
+          <Route path="/cf-ai-flow-generator-from-jd" element={<CFAiFlowGeneratorFromJdPage />} />
+          <Route path="/cf-real-time-feedback-loop" element={<CFRealTimeFeedbackLoopPage />} />
+          <Route path="/cf-adaptive-pacing" element={<CFAdaptivePacingPage />} />
+          <Route path="/cf-department-specific-content-recommendation" element={<CFDepartmentSpecificContentRecommendationPage />} />
+          <Route path="/cf-onboarding-compliance-auditing" element={<CFOnboardingComplianceAuditingPage />} />
+          <Route path="/gap-no-cohort" element={<GapNoCohortPage />} />
+          <Route path="/gap-no-sentiment" element={<GapNoSentimentPage />} />
+          <Route path="/gap-no-auto" element={<GapNoAutoPage />} />
+          <Route path="/gap-no-role" element={<GapNoRolePage />} />
+          <Route path="/gap-backend-logic-concentrated-in-single-index-js" element={<GapBackendLogicConcentratedInSingleIndexJsPage />} />
+          <Route path="/gap-missing-dedicated-checklist-routes-only-ai-generat" element={<GapMissingDedicatedChecklistRoutesOnlyAiGeneratPage />} />
+          <Route path="/gap-no-hr-system-integrations-workday-bamboohr" element={<GapNoHrSystemIntegrationsWorkdayBamboohrPage />} />
+          <Route path="/gap-no-webhooks-for-outbound-triggers-to-customer-syst" element={<GapNoWebhooksForOutboundTriggersToCustomerSystPage />} />
+          <Route path="/gap-limited-reporting-export-pdf-csv" element={<GapLimitedReportingExportPdfCsvPage />} />
+          <Route path="/gap-no-rbac-granularity-beyond-admin-manager" element={<GapNoRbacGranularityBeyondAdminManagerPage />} />
+          <Route path="/gap-no-file-upload-for-onboarding-documents-videos" element={<GapNoFileUploadForOnboardingDocumentsVideosPage />} />
+        </Routes>
                       </ErrorBoundary>
                     </Layout>
                   </PrivateRoute>
