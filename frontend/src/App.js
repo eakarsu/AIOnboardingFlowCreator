@@ -30,6 +30,7 @@ import Profile from './pages/Profile';
 import FunnelAnalytics from './pages/FunnelAnalytics';
 import SDKDocs from './pages/SDKDocs';
 import ComplianceAudit from './pages/ComplianceAudit';
+import CustomViewsPage from './pages/CustomViewsPage';
 
 // // === Batch 06 Gaps & Frontend Mounts ===
 import CFAiFlowGeneratorFromJdPage from './pages/CFAiFlowGeneratorFromJdPage';
@@ -124,6 +125,7 @@ const App = () => {
                           <Route path="/funnel-analytics" element={<FunnelAnalytics />} />
                           <Route path="/sdk-docs" element={<SDKDocs />} />
                           <Route path="/compliance-audit" element={<ComplianceAudit />} />
+                          <Route path="/custom-views" element={<CustomViewsPage />} />
                         
           {/* // === Batch 06 Gaps & Frontend Mounts === */}
           <Route path="/cf-ai-flow-generator-from-jd" element={<CFAiFlowGeneratorFromJdPage />} />

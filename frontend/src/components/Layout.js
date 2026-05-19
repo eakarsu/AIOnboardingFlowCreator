@@ -7,7 +7,7 @@ import {
   BarChart3, Plug, MessageCircle, CheckSquare, TrendingUp,
   FlaskConical, Zap, UserCog, Bell, LogOut, Menu, X, ChevronDown,
   CalendarCheck, UserPlus, ThumbsUp, GraduationCap, ClipboardCheck, Target, User,
-  TrendingDown, Book
+  TrendingDown, Book, Layers
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -55,6 +55,7 @@ const Layout = ({ children }) => {
     { path: '/training-recommender', icon: GraduationCap, label: 'AI Training' },
     { path: '/funnel-analytics', icon: TrendingDown, label: 'Funnel Analytics' },
     { path: '/sdk-docs', icon: Book, label: 'SDK Docs' },
+    { path: '/custom-views', icon: Layers, label: 'Onboarding Views' },
   // === Batch 06 Gaps & Frontend Mounts ===
   { path: '/cf-ai-flow-generator-from-jd', label: 'AI flow generator from JD', icon: '✨' },
   { path: '/cf-real-time-feedback-loop', label: 'Real-time feedback loop', icon: '✨' },
