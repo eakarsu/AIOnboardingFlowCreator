@@ -30,6 +30,7 @@ import Profile from './pages/Profile';
 import FunnelAnalytics from './pages/FunnelAnalytics';
 import SDKDocs from './pages/SDKDocs';
 import ComplianceAudit from './pages/ComplianceAudit';
+import ManagerReadiness from './pages/ManagerReadiness';
 import CustomViewsPage from './pages/CustomViewsPage';
 
 // // === Batch 06 Gaps & Frontend Mounts ===
@@ -49,6 +50,11 @@ import GapNoWebhooksForOutboundTriggersToCustomerSystPage from './pages/GapNoWeb
 import GapLimitedReportingExportPdfCsvPage from './pages/GapLimitedReportingExportPdfCsvPage';
 import GapNoRbacGranularityBeyondAdminManagerPage from './pages/GapNoRbacGranularityBeyondAdminManagerPage';
 import GapNoFileUploadForOnboardingDocumentsVideosPage from './pages/GapNoFileUploadForOnboardingDocumentsVideosPage';
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+import TimelineView from './pages/TimelineView';
+
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -92,6 +98,10 @@ const App = () => {
         <ErrorBoundary>
           <Router>
             <Routes>
+        <Route path="/insights/timeline" element={<TimelineView />} />
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
               <Route path="/login" element={<Login />} />
               <Route
                 path="/*"
@@ -125,6 +135,7 @@ const App = () => {
                           <Route path="/funnel-analytics" element={<FunnelAnalytics />} />
                           <Route path="/sdk-docs" element={<SDKDocs />} />
                           <Route path="/compliance-audit" element={<ComplianceAudit />} />
+                          <Route path="/manager-readiness" element={<ManagerReadiness />} />
                           <Route path="/custom-views" element={<CustomViewsPage />} />
                         
           {/* // === Batch 06 Gaps & Frontend Mounts === */}

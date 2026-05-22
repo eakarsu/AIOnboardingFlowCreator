@@ -65,6 +65,7 @@ app.use('/api', routes);
 
 // === Custom Views (mounted BEFORE 404 handler) ===
 app.use('/api/custom-views', require('./routes/customViews'));
+app.use('/api/manager-readiness', require('./routes/managerReadiness'));
 
 // Serve the embeddable SDK and other static assets.
 // flow-sdk.js is served with a permissive CORS header so any host page can load it.

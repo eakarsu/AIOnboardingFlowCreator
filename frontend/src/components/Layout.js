@@ -53,6 +53,7 @@ const Layout = ({ children }) => {
     { path: '/ai-progress', icon: Target, label: 'AI Progress Tracker' },
     { path: '/feedback-collector', icon: ThumbsUp, label: 'AI Feedback' },
     { path: '/training-recommender', icon: GraduationCap, label: 'AI Training' },
+    { path: '/manager-readiness', icon: Target, label: 'Manager Readiness' },
     { path: '/funnel-analytics', icon: TrendingDown, label: 'Funnel Analytics' },
     { path: '/sdk-docs', icon: Book, label: 'SDK Docs' },
     { path: '/custom-views', icon: Layers, label: 'Onboarding Views' },
