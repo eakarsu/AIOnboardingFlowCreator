@@ -26,7 +26,7 @@ const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, agency_id: user.agency_id || null },
+      { id: user.id, email: user.email, role: user.role, tenantId: process.env.GOVERNANCE_TENANT_ID, agency_id: user.agency_id || null },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -56,6 +56,7 @@ const register = async (req, res) => {
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'Email, password, and name are required' });
     }
+    if (password.length < 12) return res.status(400).json({ error: 'Password must be at least 12 characters' });
 
     const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
 
@@ -75,7 +76,7 @@ const register = async (req, res) => {
 
     const user = result.rows[0];
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, role: user.role, tenantId: process.env.GOVERNANCE_TENANT_ID },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -146,6 +147,7 @@ const changePassword = async (req, res) => {
       return res.status(401).json({ error: 'Current password is incorrect' });
     }
 
+    if (newPassword.length < 12) return res.status(400).json({ error: 'New password must be at least 12 characters' });
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await pool.query(
       'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
@@ -183,8 +185,6 @@ const forgotPassword = async (req, res) => {
     );
 
     // In production, send email with reset link here
-    console.log(`Password reset token for ${email}: ${resetToken}`);
-
     res.json({ message: 'If the email exists, a reset link has been sent' });
   } catch (error) {
     console.error('Forgot password error:', error);
@@ -209,6 +209,7 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ error: 'Invalid or expired reset token' });
     }
 
+    if (newPassword.length < 12) return res.status(400).json({ error: 'New password must be at least 12 characters' });
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await pool.query(
       'UPDATE users SET password = $1, reset_token = NULL, reset_token_expires = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $2',

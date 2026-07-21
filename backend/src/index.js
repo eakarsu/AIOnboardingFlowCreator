@@ -10,6 +10,9 @@ const { requestIdMiddleware } = require('./middleware/requestId');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+if ((process.env.JWT_SECRET || '').length < 32 || !process.env.GOVERNANCE_TENANT_ID) {
+  throw new Error('JWT_SECRET (32+ characters) and GOVERNANCE_TENANT_ID are required');
+}
 
 // Security middleware
 app.use(helmet());
@@ -81,6 +84,16 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.use('/api/governed-onboarding-flows', require('./governance'));
+
+if (process.env.ENABLE_GENERATED_ROUTES === 'true' && process.env.NODE_ENV !== 'production') {
+  app.use('/api/cf-ai-flow-generator-from-jd', require('./routes/customFeat01_AiFlowGeneratorFromJd'));
+  app.use('/api/cf-real-time-feedback-loop', require('./routes/customFeat02_RealTimeFeedbackLoop'));
+  app.use('/api/cf-adaptive-pacing', require('./routes/customFeat03_AdaptivePacing'));
+  app.use('/api/cf-department-specific-content-recommendation', require('./routes/customFeat04_DepartmentSpecificContentRecommendation'));
+  app.use('/api/cf-onboarding-compliance-auditing', require('./routes/customFeat05_OnboardingComplianceAuditing'));
+}
+
 // Structured error handler — never leaks stack traces to clients
 app.use((err, req, res, next) => {
   const requestId = req.requestId || 'unknown';
@@ -110,27 +123,6 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
-
-// === Custom Feature Mounts (batch_06) ===
-app.use('/api/cf-ai-flow-generator-from-jd', require('./routes/customFeat01_AiFlowGeneratorFromJd'));
-app.use('/api/cf-real-time-feedback-loop', require('./routes/customFeat02_RealTimeFeedbackLoop'));
-app.use('/api/cf-adaptive-pacing', require('./routes/customFeat03_AdaptivePacing'));
-app.use('/api/cf-department-specific-content-recommendation', require('./routes/customFeat04_DepartmentSpecificContentRecommendation'));
-app.use('/api/cf-onboarding-compliance-auditing', require('./routes/customFeat05_OnboardingComplianceAuditing'));
-
-
-// === Batch 06 Gaps & Frontend Mounts ===
-app.use('/api/gap-no-cohort', require('./routes/gapFeat_no_cohort'));
-app.use('/api/gap-no-sentiment', require('./routes/gapFeat_no_sentiment'));
-app.use('/api/gap-no-auto', require('./routes/gapFeat_no_auto'));
-app.use('/api/gap-no-role', require('./routes/gapFeat_no_role'));
-app.use('/api/gap-backend-logic-concentrated-in-single-index-js', require('./routes/gapFeat_backend_logic_concentrated_in_single_index_js'));
-app.use('/api/gap-missing-dedicated-checklist-routes-only-ai-generat', require('./routes/gapFeat_missing_dedicated_checklist_routes_only_ai_generat'));
-app.use('/api/gap-no-hr-system-integrations-workday-bamboohr', require('./routes/gapFeat_no_hr_system_integrations_workday_bamboohr'));
-app.use('/api/gap-no-webhooks-for-outbound-triggers-to-customer-syst', require('./routes/gapFeat_no_webhooks_for_outbound_triggers_to_customer_syst'));
-app.use('/api/gap-limited-reporting-export-pdf-csv', require('./routes/gapFeat_limited_reporting_export_pdf_csv'));
-app.use('/api/gap-no-rbac-granularity-beyond-admin-manager', require('./routes/gapFeat_no_rbac_granularity_beyond_admin_manager'));
-app.use('/api/gap-no-file-upload-for-onboarding-documents-videos', require('./routes/gapFeat_no_file_upload_for_onboarding_documents_videos'));
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
