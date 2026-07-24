@@ -33,6 +33,7 @@ router.post('/auth/verify-email', verifyEmail);
 
 // Auth routes (authenticated)
 router.get('/auth/profile', authenticateToken, getProfile);
+router.get('/auth/me', authenticateToken, getProfile);
 router.put('/auth/profile', authenticateToken, updateProfile);
 router.put('/auth/change-password', authenticateToken, validatePasswordStrength, changePassword);
 router.post('/auth/logout', authenticateToken, logout);

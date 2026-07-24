@@ -24,9 +24,14 @@ migrate() {
 start_services() {
   check
   [[ -d "$API_DIR/node_modules" && -d "$UI_DIR/node_modules" ]] || { echo 'Dependencies are missing; install them explicitly in backend and frontend' >&2; return 1; }
-  (cd "$API_DIR" && npm start) & api_pid=$!
-  (cd "$UI_DIR" && npm start) & ui_pid=$!
+  set -a
+  # shellcheck disable=SC1091
+  . "$PROJECT_DIR/.env"
+  set +a
+  local backend_port="${BACKEND_PORT:-${PORT:-3001}}" frontend_port="${FRONTEND_PORT:-3000}"
+  (cd "$API_DIR" && PORT="$backend_port" npm start) & api_pid=$!
+  (cd "$UI_DIR" && PORT="$frontend_port" REACT_APP_API_URL="${REACT_APP_API_URL:-http://127.0.0.1:$backend_port/api}" BROWSER=none npm start) & ui_pid=$!
   trap 'kill "$api_pid" "$ui_pid" 2>/dev/null || true' EXIT INT TERM
   wait "$api_pid" "$ui_pid"
 }
-case "${1:-check}" in check) check ;; migrate) migrate ;; start) start_services ;; *) echo 'Usage: ./start.sh {check|migrate|start}' >&2; exit 2 ;; esac
+case "${1:-start}" in check) check ;; migrate) migrate ;; start) start_services ;; *) echo 'Usage: ./start.sh {check|migrate|start}' >&2; exit 2 ;; esac

@@ -401,7 +401,11 @@ const createTables = async () => {
     `CREATE INDEX IF NOT EXISTS idx_progress_flow_step ON progress_tracking(flow_id, current_step)`,
 
     // Unique constraint required for the ON CONFLICT upsert in the SDK event recorder
-    `ALTER TABLE progress_tracking ADD CONSTRAINT IF NOT EXISTS uq_progress_user_flow UNIQUE (user_id, flow_id)`,
+    `DO $$ BEGIN
+       IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_progress_user_flow') THEN
+         ALTER TABLE progress_tracking ADD CONSTRAINT uq_progress_user_flow UNIQUE (user_id, flow_id);
+       END IF;
+     END $$`,
 
     // Index for agency-scoped flow lookups
     `CREATE INDEX IF NOT EXISTS idx_flows_agency_id ON onboarding_flows(agency_id)`,

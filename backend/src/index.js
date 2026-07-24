@@ -3,10 +3,13 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 const routes = require('./routes');
 const { requestIdMiddleware } = require('./middleware/requestId');
+const pool = require('./config/database');
+const { createTables } = require('./config/schema');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -124,9 +127,25 @@ app.use((req, res) => {
 });
 
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`API available at http://localhost:${PORT}/api`);
-});
+async function initializeRuntime() {
+  if (process.env.MIGRATE_ON_START !== 'true') return;
+  const email = process.env.PROVISION_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+  const password = process.env.PROVISION_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD;
+  if (!email || !password) throw new Error('Runtime admin credentials are required');
+  await createTables();
+  const passwordHash = await bcrypt.hash(password, 10);
+  await pool.query(
+    `INSERT INTO users(email,password,name,role,email_verified)
+     VALUES($1,$2,$3,'admin',TRUE)
+     ON CONFLICT(email) DO UPDATE SET password=EXCLUDED.password,name=EXCLUDED.name,role='admin',email_verified=TRUE,updated_at=CURRENT_TIMESTAMP`,
+    [email, passwordHash, process.env.PROVISION_ADMIN_NAME || 'Runtime Administrator']
+  );
+}
+initializeRuntime()
+  .then(() => app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`API available at http://localhost:${PORT}/api`);
+  }))
+  .catch((error) => { console.error('Runtime initialization failed:', error.message); process.exit(1); });
 
 module.exports = app;
