@@ -60,8 +60,8 @@ const Login = () => {
   };
 
   const fillDemoCredentials = () => {
-    setEmail('demo@onboardflow.com');
-    setPassword('password123');
+    setEmail(process.env.REACT_APP_DEMO_EMAIL || '');
+    setPassword(process.env.REACT_APP_DEMO_PASSWORD || '');
   };
 
   const inputStyle = {

@@ -2,6 +2,12 @@ const pool = require('./config/database');
 const bcrypt = require('bcryptjs');
 const { createTables } = require('./config/schema');
 
+function requireDemoPassword() {
+  const password = process.env.DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD || process.env.DEMO_SEED_PASSWORD || '';
+  if (password.length < 12 || password.length > 1024) throw new Error('DEMO_PASSWORD must contain 12-1024 characters');
+  return password;
+}
+
 const seedDatabase = async () => {
   try {
     console.log('Creating tables...');
@@ -36,7 +42,7 @@ const seedDatabase = async () => {
 
     // Seed Users (15 items)
     console.log('Seeding users...');
-    const hashedPassword = await bcrypt.hash('password123', 10);
+    const hashedPassword = await bcrypt.hash(requireDemoPassword(), 10);
     const users = [
       { email: 'admin@onboardflow.com', name: 'Admin User', role: 'admin', department: 'IT', position: 'System Admin' },
       { email: 'demo@onboardflow.com', name: 'Demo User', role: 'user', department: 'Engineering', position: 'Developer' },
@@ -606,7 +612,7 @@ const seedDatabase = async () => {
 
     console.log('Database seeded successfully!');
     console.log('\n========================================');
-    console.log('Demo credentials: demo@onboardflow.com / password123');
+    console.log('Demo login users provisioned from the local environment.');
     console.log('========================================\n');
     process.exit(0);
   } catch (error) {
