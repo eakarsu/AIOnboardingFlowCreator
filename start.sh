@@ -84,7 +84,13 @@ start_services() {
   set +a
   local backend_port="${BACKEND_PORT:-${PORT:-3001}}" frontend_port="${FRONTEND_PORT:-3000}"
   (cd "$API_DIR" && PORT="$backend_port" npm start) & api_pid=$!
-  (cd "$UI_DIR" && PORT="$frontend_port" REACT_APP_API_URL="${REACT_APP_API_URL:-http://127.0.0.1:$backend_port/api}" BROWSER=none npm start) & ui_pid=$!
+  frontend_api_url="${REACT_APP_API_URL:-http://127.0.0.1:$backend_port}"
+  frontend_api_url="${frontend_api_url%/}"
+  case "$frontend_api_url" in
+    */api) ;;
+    *) frontend_api_url="$frontend_api_url/api" ;;
+  esac
+  (cd "$UI_DIR" && PORT="$frontend_port" REACT_APP_API_URL="$frontend_api_url" BROWSER=none npm start) & ui_pid=$!
   trap 'kill "$api_pid" "$ui_pid" 2>/dev/null || true' EXIT INT TERM
   wait "$api_pid" "$ui_pid"
 }

@@ -191,7 +191,7 @@ const Login = () => {
               }}
             >
               <User size={18} />
-              Use Demo Credentials
+              Auto Fill Demo Credentials
             </button>
 
             <div style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8', marginBottom: 20 }}>
