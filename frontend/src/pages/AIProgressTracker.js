@@ -3,6 +3,7 @@ import { Target, TrendingUp, TrendingDown, Minus, Sparkles, Calendar, Award } fr
 import { DataTable } from '../components/DataTable';
 import { aiProgressAPI, aiGenerateAPI } from '../services/api';
 import { useToast } from '../components/Toast';
+import FormattedAIReport, { FormattedAIValue } from '../components/FormattedAIReport';
 
 const goalTypes = [
   { value: 'skill_development', label: 'Skill Development' },
@@ -15,11 +16,17 @@ const goalTypes = [
   { value: 'compliance', label: 'Compliance' }
 ];
 
+const futureDate = (days) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
 const sampleData = [
-  { user_name: 'James Liu', goal_type: 'certification', goal_description: 'Pass AWS Solutions Architect Professional certification exam. Currently studying networking and security domains.', current_value: 72, target_value: 100, target_date: '2025-06-15', status: 'in_progress' },
-  { user_name: 'Rachel Foster', goal_type: 'sales_target', goal_description: 'Achieve Q2 sales revenue target of $500K. Currently at $187K with strong pipeline.', current_value: 187000, target_value: 500000, target_date: '2025-06-30', status: 'in_progress' },
-  { user_name: 'Dev Team Alpha', goal_type: 'product_metrics', goal_description: 'Increase unit test coverage from 45% to 80% across all microservices.', current_value: 45, target_value: 80, target_date: '2025-09-01', status: 'in_progress' },
-  { user_name: 'Sophie Anderson', goal_type: 'personal_development', goal_description: 'Read 24 professional development books this year covering leadership, communication, and technical topics.', current_value: 8, target_value: 24, target_date: '2025-12-31', status: 'in_progress' },
+  { user_name: 'James Liu', goal_type: 'certification', goal_description: 'Pass AWS Solutions Architect Professional certification exam. Currently studying networking and security domains.', current_value: 72, target_value: 100, target_date: futureDate(60), status: 'in_progress' },
+  { user_name: 'Rachel Foster', goal_type: 'sales_target', goal_description: 'Achieve the next quarterly sales revenue target of $500K. Currently at $187K with a strong qualified pipeline.', current_value: 187000, target_value: 500000, target_date: futureDate(90), status: 'in_progress' },
+  { user_name: 'Dev Team Alpha', goal_type: 'product_metrics', goal_description: 'Increase unit test coverage from 45% to 80% across all microservices.', current_value: 45, target_value: 80, target_date: futureDate(120), status: 'in_progress' },
+  { user_name: 'Sophie Anderson', goal_type: 'personal_development', goal_description: 'Read 24 professional development books over the next year covering leadership, communication, and technical topics.', current_value: 8, target_value: 24, target_date: futureDate(365), status: 'in_progress' },
 ];
 
 const getTrendIcon = (trend) => {
@@ -150,39 +157,7 @@ const ProgressForm = ({ data, onChange }) => {
         style={{ width: '100%', padding: '12px', marginBottom: 16, background: 'linear-gradient(135deg, #0ea5e9, #6366f1)', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 600 }}>
         <Target size={18} /> {aiLoading ? 'Predicting...' : 'Predict Progress (30d)'}
       </button>
-      {aiResult && (
-        <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', padding: 16, borderRadius: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <Sparkles size={16} style={{ color: '#10b981' }} />
-            <span style={{ fontWeight: 600, color: '#166534' }}>AI Analysis</span>
-            {typeof aiResult === 'object' && aiResult.trend && (
-              <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: getTrendColor(aiResult.trend) }}>
-                {getTrendIcon(aiResult.trend)} {aiResult.trend}
-              </span>
-            )}
-          </div>
-          {typeof aiResult === 'object' ? (
-            <div>
-              {aiResult.insights && <p style={{ color: '#14532d', fontSize: 14, marginBottom: 12 }}>{aiResult.insights}</p>}
-              {aiResult.recommendations?.length > 0 && (
-                <div style={{ marginBottom: 8 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#166534', marginBottom: 4 }}>Recommendations:</div>
-                  <ul style={{ margin: 0, paddingLeft: 20, color: '#14532d', fontSize: 13 }}>
-                    {aiResult.recommendations.map((r, i) => <li key={i}>{r}</li>)}
-                  </ul>
-                </div>
-              )}
-              {aiResult.motivation_message && (
-                <div style={{ padding: 12, background: 'white', borderRadius: 8, marginTop: 8 }}>
-                  <p style={{ color: '#166534', fontSize: 13, margin: 0, fontStyle: 'italic' }}>"{aiResult.motivation_message}"</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p style={{ color: '#14532d', fontSize: 14, whiteSpace: 'pre-wrap' }}>{aiResult}</p>
-          )}
-        </div>
-      )}
+      {aiResult !== null && <FormattedAIReport response={aiResult} title="Progress analysis" />}
     </div>
   );
 };
@@ -306,12 +281,8 @@ const AIProgressTracker = () => {
     { key: 'trend', label: 'Trend', render: (v) => v || '-' },
     { key: 'target_date', label: 'Target Date', render: (v) => v?.split('T')[0] || '-' },
     { key: 'status', label: 'Status', render: (v) => v?.replace('_', ' ') },
-    { key: 'ai_insights', label: 'AI Insights', render: (v) => v || '-' },
-    { key: 'ai_recommendations', label: 'AI Recommendations', render: (v) => {
-      if (!v) return '-';
-      const recs = typeof v === 'string' ? JSON.parse(v) : v;
-      return Array.isArray(recs) ? recs.join('; ') : v;
-    }},
+    { key: 'ai_insights', label: 'AI Insights', render: (v) => v == null ? '-' : <FormattedAIValue value={v} /> },
+    { key: 'ai_recommendations', label: 'AI Recommendations', render: (v) => v == null ? '-' : <FormattedAIValue value={v} /> },
     { key: 'created_at', label: 'Created At', render: (v) => v ? new Date(v).toLocaleString() : '-' }
   ];
 

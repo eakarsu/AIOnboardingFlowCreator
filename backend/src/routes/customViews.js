@@ -35,7 +35,7 @@ function optionalAuth(req, res, next) {
 
 // ---- Bootstrap: create rules table + seed deterministic fixture data ----
 const TABLE = 'custom_views_flow_rules';
-(async () => {
+if (process.env.MIGRATE_ON_START === 'true') (async () => {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS ${TABLE} (
@@ -60,11 +60,19 @@ const TABLE = 'custom_views_flow_rules';
         ['tools_intro', 'completed == true', 'design_brief', 1],
         ['first_pr', 'merged == true', 'mentor_match', 1],
         ['mentor_match', 'always', 'feedback_loop', 1],
+        // Inactive examples make the rules editor useful without changing live branching.
+        ['welcome', 'user.role == "sales"', 'profile_setup', 3, false],
+        ['profile_setup', 'completed == true', 'env_setup', 1, false],
+        ['profile_setup', 'completed == false', 'profile_help', 2, false],
+        ['first_task', 'completed == true', 'mentor_match', 1, false],
+        ['first_task', 'completed == false', 'task_help', 2, false],
+        ['feedback_loop', 'submitted == true', 'graduation', 1, false],
+        ['graduation', 'always', 'complete', 1, false],
       ];
-      for (const [step_key, condition_expr, next_step, priority] of seeds) {
+      for (const [step_key, condition_expr, next_step, priority, active = true] of seeds) {
         await pool.query(
-          `INSERT INTO ${TABLE}(step_key, condition_expr, next_step, priority) VALUES ($1,$2,$3,$4)`,
-          [step_key, condition_expr, next_step, priority]
+          `INSERT INTO ${TABLE}(step_key, condition_expr, next_step, priority, active) VALUES ($1,$2,$3,$4,$5)`,
+          [step_key, condition_expr, next_step, priority, active]
         );
       }
     }

@@ -135,7 +135,7 @@ const Dashboard = () => {
         ]);
         setStats(statsRes.data);
         const flowData = Array.isArray(flowsRes.data) ? flowsRes.data : flowsRes.data.data || [];
-        setFlows(flowData.slice(0, 6));
+        setFlows(flowData);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {

@@ -22,7 +22,7 @@ const Analytics = () => {
     fetchData();
   }, []);
 
-  const avgCompletion = flows.reduce((sum, f) => sum + (f.completion_rate || 0), 0) / (flows.length || 1);
+  const avgCompletion = flows.reduce((sum, f) => sum + (Number(f.completion_rate) || 0), 0) / (flows.length || 1);
   const activeFlows = flows.filter(f => f.status === 'active').length;
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 100 }}><div style={{ width: 40, height: 40, border: '3px solid #e2e8f0', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /><style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style></div>;
@@ -60,7 +60,7 @@ const Analytics = () => {
       <div style={{ background: 'white', borderRadius: 12, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
         <h2 style={{ fontSize: 18, fontWeight: 600, color: '#1e293b', marginBottom: 20 }}>Flow Performance</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {flows.slice(0, 10).map((flow) => (
+          {flows.map((flow) => (
             <div key={flow.id} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>

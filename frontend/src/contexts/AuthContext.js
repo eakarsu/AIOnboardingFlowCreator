@@ -43,6 +43,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const demoLogin = async () => {
+    try {
+      const { data: { token, user } } = await authAPI.demoLogin();
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error || 'Demo login failed' };
+    }
+  };
+
   const register = async (email, password, name) => {
     try {
       const response = await authAPI.register(email, password, name);
@@ -82,6 +94,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     login,
+    demoLogin,
     register,
     logout,
     updateUser,

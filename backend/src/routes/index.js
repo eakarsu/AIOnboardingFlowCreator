@@ -26,6 +26,21 @@ const { getFunnelAnalytics } = require('../controllers/funnelController');
 
 // Auth routes (public)
 router.post('/auth/login', login);
+// Local development only: authenticate the configured demo account without
+// sending its password to the browser or creating an account.
+router.post('/auth/demo-login', (req, res) => {
+  const origin = req.get('origin');
+  const localOrigin = origin && /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/.test(origin);
+  const localClient = /^(?:127\.0\.0\.1|::1|::ffff:127\.0\.0\.1)$/.test(req.socket.remoteAddress || '');
+  if (process.env.NODE_ENV === 'production' || !localOrigin || !localClient) {
+    return res.status(404).json({ error: 'Demo login is unavailable' });
+  }
+  const email = process.env.DEMO_EMAIL;
+  const password = process.env.DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD || process.env.DEMO_SEED_PASSWORD;
+  if (!email || !password) return res.status(503).json({ error: 'Demo credentials are unavailable' });
+  req.body = { email, password };
+  return login(req, res);
+});
 router.post('/auth/register', validatePasswordStrength, register);
 router.post('/auth/forgot-password', forgotPassword);
 router.post('/auth/reset-password', validatePasswordStrength, resetPassword);

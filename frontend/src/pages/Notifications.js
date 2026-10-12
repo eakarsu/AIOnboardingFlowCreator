@@ -58,14 +58,14 @@ const Notifications = () => {
     { key: 'channel', label: 'Channel', render: (v) => <span style={{ textTransform: 'capitalize' }}>{v}</span> },
     { key: 'status', label: 'Status', render: (v) => { const c = statusColors[v] || statusColors.draft; const Icon = statusIcons[v] || FileEdit; return (<span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500, background: c.bg, color: c.color, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Icon size={12} />{v}</span>); } },
     { key: 'sent_count', label: 'Sent', render: (v) => <span style={{ fontWeight: 500 }}>{(v || 0).toLocaleString()}</span> },
-    { key: 'open_rate', label: 'Open Rate', render: (v) => <span>{(v || 0).toFixed(1)}%</span> }
+    { key: 'open_rate', label: 'Open Rate', render: (v) => <span>{(Number(v) || 0).toFixed(1)}%</span> }
   ];
 
   const detailFields = [
     { key: 'id', label: 'ID' }, { key: 'title', label: 'Title' }, { key: 'message', label: 'Message' },
     { key: 'notification_type', label: 'Type' }, { key: 'channel', label: 'Channel' }, { key: 'status', label: 'Status' },
-    { key: 'sent_count', label: 'Sent Count' }, { key: 'open_rate', label: 'Open Rate', render: (v) => `${(v || 0).toFixed(1)}%` },
-    { key: 'click_rate', label: 'Click Rate', render: (v) => `${(v || 0).toFixed(1)}%` },
+    { key: 'sent_count', label: 'Sent Count' }, { key: 'open_rate', label: 'Open Rate', render: (v) => `${(Number(v) || 0).toFixed(1)}%` },
+    { key: 'click_rate', label: 'Click Rate', render: (v) => `${(Number(v) || 0).toFixed(1)}%` },
     { key: 'created_at', label: 'Created At', render: (v) => new Date(v).toLocaleString() }
   ];
 

@@ -3,12 +3,19 @@ import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, Sparkles } from 'lu
 import { DataTable } from '../components/DataTable';
 import { ptoRequestsAPI, aiGenerateAPI } from '../services/api';
 import { useToast } from '../components/Toast';
+import FormattedAIReport, { FormattedAIValue } from '../components/FormattedAIReport';
+
+const futureDate = (days) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+};
 
 const sampleData = [
-  { employee_name: 'Sarah Chen', department: 'Engineering', request_type: 'vacation', start_date: '2025-07-14', end_date: '2025-07-25', days_requested: 10, reason: 'Annual family vacation to Japan — flights and hotels already booked. All Q3 sprint work will be completed before departure, and handoff doc is being prepared for the team.' },
-  { employee_name: 'Marcus Williams', department: 'Sales', request_type: 'sick', start_date: '2025-03-10', end_date: '2025-03-21', days_requested: 10, reason: 'Scheduled knee surgery with expected 2-week recovery. Doctor documentation available. Will have limited availability for critical escalations via email after day 5.' },
-  { employee_name: 'Priya Patel', department: 'Product', request_type: 'parental', start_date: '2025-05-01', end_date: '2025-08-01', days_requested: 65, reason: 'Maternity leave for expected first child. Have been training backup PM (Jake) for 6 weeks. All product roadmap documentation is up to date.' },
-  { employee_name: 'Alex Rivera', department: 'Marketing', request_type: 'personal', start_date: '2025-04-04', end_date: '2025-04-07', days_requested: 2, reason: 'Relocating to a new apartment across the city. Need Friday and Monday to handle movers, utility setup, and address changes.' },
+  { employee_name: 'Sarah Chen', department: 'Engineering', request_type: 'vacation', start_date: futureDate(45), end_date: futureDate(56), days_requested: 10, reason: 'Annual family vacation — travel is booked. Current sprint work will be completed before departure, and a handoff document is being prepared for the team.', status: 'pending' },
+  { employee_name: 'Marcus Williams', department: 'Sales', request_type: 'sick', start_date: futureDate(14), end_date: futureDate(25), days_requested: 10, reason: 'Scheduled knee surgery with an expected two-week recovery. Documentation is available, and critical account handoffs will be completed before leave.', status: 'pending' },
+  { employee_name: 'Priya Patel', department: 'Product', request_type: 'parental', start_date: futureDate(75), end_date: futureDate(166), days_requested: 65, reason: 'Planned parental leave. A backup product manager has been training for six weeks, and current roadmap documentation is up to date.', status: 'pending' },
+  { employee_name: 'Alex Rivera', department: 'Marketing', request_type: 'personal', start_date: futureDate(21), end_date: futureDate(24), days_requested: 2, reason: 'Relocating to a new apartment. Two business days are needed for movers, utility setup, and address changes.', status: 'pending' },
 ];
 
 const getStatusColor = (status) => {
@@ -114,39 +121,7 @@ const PTOForm = ({ data, onChange }) => {
         style={{ width: '100%', padding: '12px', marginBottom: 16, background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 600 }}>
         <Sparkles size={18} /> {aiLoading ? 'Analyzing...' : 'Get AI Recommendation'}
       </button>
-      {aiResult && (
-        <div style={{ background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)', padding: 16, borderRadius: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <Sparkles size={16} style={{ color: '#0ea5e9' }} />
-            <span style={{ fontWeight: 600, color: '#0369a1' }}>AI Analysis</span>
-            {typeof aiResult === 'object' && aiResult.approval_score && (
-              <span style={{ marginLeft: 'auto', background: aiResult.approval_score > 70 ? '#10b981' : aiResult.approval_score > 40 ? '#f59e0b' : '#ef4444', color: 'white', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{aiResult.approval_score}%</span>
-            )}
-          </div>
-          {typeof aiResult === 'object' ? (
-            <div>
-              <div style={{ padding: 12, background: 'white', borderRadius: 8, marginBottom: 12 }}>
-                <div style={{ fontWeight: 600, marginBottom: 4, color: '#0c4a6e' }}>Recommendation: {aiResult.recommendation?.toUpperCase()}</div>
-                <p style={{ color: '#0c4a6e', fontSize: 14 }}>{aiResult.analysis}</p>
-              </div>
-              {aiResult.concerns?.length > 0 && (
-                <div style={{ marginBottom: 8 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#dc2626', marginBottom: 4 }}>Concerns:</div>
-                  <ul style={{ margin: 0, paddingLeft: 20, color: '#0c4a6e', fontSize: 13 }}>{aiResult.concerns.map((c, i) => <li key={i}>{c}</li>)}</ul>
-                </div>
-              )}
-              {aiResult.suggestions?.length > 0 && (
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#10b981', marginBottom: 4 }}>Suggestions:</div>
-                  <ul style={{ margin: 0, paddingLeft: 20, color: '#0c4a6e', fontSize: 13 }}>{aiResult.suggestions.map((s, i) => <li key={i}>{s}</li>)}</ul>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p style={{ color: '#0c4a6e', fontSize: 14, whiteSpace: 'pre-wrap' }}>{aiResult}</p>
-          )}
-        </div>
-      )}
+      {aiResult !== null && <FormattedAIReport response={aiResult} title="PTO analysis" />}
     </div>
   );
 };
@@ -262,8 +237,8 @@ const PTOScheduler = () => {
     { key: 'days_requested', label: 'Days Requested' },
     { key: 'status', label: 'Status', render: (v) => v?.charAt(0).toUpperCase() + v?.slice(1) },
     { key: 'reason', label: 'Reason' },
-    { key: 'ai_approval_score', label: 'AI Score', render: (v) => v ? `${v}%` : '-' },
-    { key: 'ai_recommendation', label: 'AI Recommendation', render: (v) => v || '-' },
+    { key: 'ai_approval_score', label: 'AI Score', render: (v) => v == null ? '-' : `${v}%` },
+    { key: 'ai_recommendation', label: 'AI Recommendation', render: (v) => v == null ? '-' : <FormattedAIValue value={v} /> },
     { key: 'created_at', label: 'Created At', render: (v) => v ? new Date(v).toLocaleString() : '-' }
   ];
 

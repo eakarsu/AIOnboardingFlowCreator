@@ -3,12 +3,19 @@ import { CheckSquare, Sparkles, Calendar, Check, Square } from 'lucide-react';
 import { DataTable } from '../components/DataTable';
 import { aiChecklistsAPI, aiGenerateAPI } from '../services/api';
 import { useToast } from '../components/Toast';
+import FormattedAIReport, { FormattedAIValue } from '../components/FormattedAIReport';
+
+const futureDate = (days) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+};
 
 const sampleData = [
-  { name: 'New Hire First Day Checklist', description: 'Essential tasks for an employee\'s first day including system access, team introductions, and workspace setup', user_name: 'HR Coordinator', checklist_type: 'onboarding', priority: 'high', status: 'active' },
-  { name: 'Product Launch Readiness', description: 'Pre-launch checklist covering marketing assets, QA sign-off, documentation, and go-to-market coordination', user_name: 'Product Manager', checklist_type: 'launch', priority: 'high', status: 'active' },
-  { name: 'Quarterly Security Audit', description: 'Comprehensive security review including access controls, vulnerability scanning, compliance verification', user_name: 'Security Engineer', checklist_type: 'security', priority: 'high', status: 'active' },
-  { name: 'Sprint Planning Ceremony', description: 'Step-by-step checklist for running an effective sprint planning session', user_name: 'Scrum Master', checklist_type: 'meeting_prep', priority: 'medium', status: 'active' },
+  { name: 'New Hire First Day Checklist', description: 'Essential tasks for an employee\'s first day including system access, team introductions, and workspace setup', user_name: 'HR Coordinator', checklist_type: 'onboarding', priority: 'high', status: 'active', due_date: futureDate(7), number_of_items: 7 },
+  { name: 'Product Launch Readiness', description: 'Pre-launch checklist covering marketing assets, QA sign-off, documentation, and go-to-market coordination', user_name: 'Product Manager', checklist_type: 'launch', priority: 'high', status: 'active', due_date: futureDate(14), number_of_items: 9 },
+  { name: 'Quarterly Security Audit', description: 'Comprehensive security review including access controls, vulnerability scanning, compliance verification', user_name: 'Security Engineer', checklist_type: 'security', priority: 'high', status: 'active', due_date: futureDate(21), number_of_items: 8 },
+  { name: 'Sprint Planning Ceremony', description: 'Step-by-step checklist for running an effective sprint planning session', user_name: 'Scrum Master', checklist_type: 'meeting_prep', priority: 'medium', status: 'active', due_date: futureDate(3), number_of_items: 6 },
 ];
 
 const getPriorityColor = (priority) => {
@@ -28,7 +35,7 @@ const ChecklistForm = ({ data, onChange }) => {
     try {
       const response = await aiGenerateAPI.generateAIChecklist({
         checklist_type: data.checklist_type, context: data.description || data.name,
-        user_role: data.user_name, number_of_items: 5
+        user_role: data.user_name, number_of_items: Number(data.number_of_items) || 5
       });
       setAiResult(response.data.checklist);
       if (response.data.checklist?.items) {
@@ -46,9 +53,9 @@ const ChecklistForm = ({ data, onChange }) => {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '10px 12px', background: '#f8fafc', borderRadius: 8, marginBottom: 16 }}>
         <span style={{ fontSize: 11, color: '#94a3b8', alignSelf: 'center', marginRight: 4 }}>Load sample:</span>
         {sampleData.map((sample, i) => (
-          <button key={i} type="button" onClick={() => { onChange({ ...data, ...sample, items: [], due_date: '' }); setAiResult(null); }}
+          <button key={i} type="button" onClick={() => { onChange({ ...data, ...sample, items: [] }); setAiResult(null); }}
             style={{ padding: '4px 10px', fontSize: 11, fontWeight: 500, background: 'linear-gradient(135deg, #ede9fe, #f3e8ff)', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 20, cursor: 'pointer' }}>
-            {['New Hire', 'Launch', 'Security', 'Sprint'][i]}
+          {['New Hire', 'Launch', 'Security', 'Sprint'][i]}
           </button>
         ))}
       </div>
@@ -79,7 +86,7 @@ const ChecklistForm = ({ data, onChange }) => {
           placeholder="Describe the purpose or context..."
           style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14, resize: 'vertical' }} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div>
           <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 6 }}>Assigned To</label>
           <input type="text" value={data.user_name || ''} onChange={(e) => onChange({ ...data, user_name: e.target.value })}
@@ -99,6 +106,11 @@ const ChecklistForm = ({ data, onChange }) => {
           <input type="date" value={data.due_date?.split('T')[0] || ''} onChange={(e) => onChange({ ...data, due_date: e.target.value || null })}
             style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14 }} />
         </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 6 }}>AI checklist item count</label>
+          <input type="number" min="1" max="30" value={data.number_of_items || 5} onChange={(e) => onChange({ ...data, number_of_items: Math.max(1, Math.min(30, Number(e.target.value) || 1)) })}
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14 }} />
+        </div>
       </div>
       {items.length > 0 && (
         <div style={{ marginBottom: 16, padding: 12, background: '#f8fafc', borderRadius: 8 }}>
@@ -116,20 +128,7 @@ const ChecklistForm = ({ data, onChange }) => {
         style={{ width: '100%', padding: '12px', marginBottom: 16, background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 600 }}>
         <Sparkles size={18} /> {aiLoading ? 'Generating...' : 'Generate with AI'}
       </button>
-      {aiResult && (
-        <div style={{ background: 'linear-gradient(135deg, #faf5ff, #f3e8ff)', padding: 16, borderRadius: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <Sparkles size={16} style={{ color: '#8b5cf6' }} />
-            <span style={{ fontWeight: 600, color: '#7c3aed' }}>AI Generated</span>
-          </div>
-          {aiResult.suggestions && <p style={{ color: '#581c87', fontSize: 13, marginBottom: 8 }}>{aiResult.suggestions}</p>}
-          {aiResult.tips?.length > 0 && (
-            <ul style={{ margin: 0, paddingLeft: 20, color: '#581c87', fontSize: 13 }}>
-              {aiResult.tips.map((tip, i) => <li key={i}>{tip}</li>)}
-            </ul>
-          )}
-        </div>
-      )}
+      {aiResult !== null && <FormattedAIReport response={aiResult} title="Generated checklist" />}
     </div>
   );
 };
@@ -269,7 +268,7 @@ const AIChecklists = () => {
     { key: 'priority', label: 'Priority' },
     { key: 'due_date', label: 'Due Date', render: (v) => v?.split('T')[0] || '-' },
     { key: 'status', label: 'Status' },
-    { key: 'ai_suggestions', label: 'AI Suggestions', render: (v) => v || '-' },
+    { key: 'ai_suggestions', label: 'AI Suggestions', render: (v) => v == null ? '-' : <FormattedAIValue value={v} /> },
     { key: 'created_at', label: 'Created At', render: (v) => v ? new Date(v).toLocaleString() : '-' }
   ];
 

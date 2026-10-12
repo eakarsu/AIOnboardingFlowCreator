@@ -1,3 +1,4 @@
+import AIReportLibrary from "./AIReportLibrary";
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -158,12 +159,12 @@ const Layout = ({ children }) => {
                 justifyContent: sidebarOpen ? 'flex-start' : 'center'
               })}
             >
-              <item.icon size={18} style={{ flexShrink: 0 }} />
+              {typeof item.icon === 'string' ? <span aria-hidden="true" style={{ flexShrink: 0 }}>{item.icon}</span> : <item.icon size={18} style={{ flexShrink: 0 }} />}
               {sidebarOpen && <span>{item.label}</span>}
             </NavLink>
           ))}
         </nav>
-      </aside>
+      <AIReportLibrary /></aside>
 
       {/* Main Content */}
       <div style={{

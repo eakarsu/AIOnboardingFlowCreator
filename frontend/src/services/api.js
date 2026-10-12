@@ -9,6 +9,19 @@ const api = axios.create({
   },
 });
 
+// CRUD list routes return a flat array by default and { data, pagination }
+// when paginated. Keep list consumers on the same array contract in both cases.
+export const recordRows = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  return Array.isArray(payload?.data) ? payload.data : [];
+};
+
+const getRecordList = (path, params) => api.get(path, { params }).then((response) => ({
+  ...response,
+  data: recordRows(response.data),
+  pagination: response.data?.pagination
+}));
+
 // Add auth token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -34,6 +47,7 @@ api.interceptors.response.use(
 // Auth
 export const authAPI = {
   login: (email, password) => api.post('/auth/login', { email, password }),
+  demoLogin: () => api.post('/auth/demo-login'),
   register: (email, password, name) => api.post('/auth/register', { email, password, name }),
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (data) => api.put('/auth/profile', data),
@@ -51,7 +65,7 @@ export const dashboardAPI = {
 
 // Flows
 export const flowsAPI = {
-  getAll: (params) => api.get('/flows', { params }),
+  getAll: (params) => getRecordList('/flows', params),
   getById: (id) => api.get(`/flows/${id}`),
   create: (data) => api.post('/flows', data),
   update: (id, data) => api.put(`/flows/${id}`, data),
@@ -65,7 +79,7 @@ export const flowsAPI = {
 
 // Steps
 export const stepsAPI = {
-  getAll: (params) => api.get('/steps', { params }),
+  getAll: (params) => getRecordList('/steps', params),
   getById: (id) => api.get(`/steps/${id}`),
   create: (data) => api.post('/steps', data),
   update: (id, data) => api.put(`/steps/${id}`, data),
@@ -74,7 +88,7 @@ export const stepsAPI = {
 
 // Segments
 export const segmentsAPI = {
-  getAll: (params) => api.get('/segments', { params }),
+  getAll: (params) => getRecordList('/segments', params),
   getById: (id) => api.get(`/segments/${id}`),
   create: (data) => api.post('/segments', data),
   update: (id, data) => api.put(`/segments/${id}`, data),
@@ -86,7 +100,7 @@ export const segmentsAPI = {
 
 // Templates
 export const templatesAPI = {
-  getAll: (params) => api.get('/templates', { params }),
+  getAll: (params) => getRecordList('/templates', params),
   getById: (id) => api.get(`/templates/${id}`),
   create: (data) => api.post('/templates', data),
   update: (id, data) => api.put(`/templates/${id}`, data),
@@ -98,7 +112,7 @@ export const templatesAPI = {
 
 // AI Content
 export const aiContentAPI = {
-  getAll: (params) => api.get('/ai-content', { params }),
+  getAll: (params) => getRecordList('/ai-content', params),
   getById: (id) => api.get(`/ai-content/${id}`),
   create: (data) => api.post('/ai-content', data),
   delete: (id) => api.delete(`/ai-content/${id}`),
@@ -108,14 +122,14 @@ export const aiContentAPI = {
 
 // Analytics
 export const analyticsAPI = {
-  getAll: (params) => api.get('/analytics', { params }),
+  getAll: (params) => getRecordList('/analytics', params),
   getById: (id) => api.get(`/analytics/${id}`),
   create: (data) => api.post('/analytics', data),
 };
 
 // Integrations
 export const integrationsAPI = {
-  getAll: (params) => api.get('/integrations', { params }),
+  getAll: (params) => getRecordList('/integrations', params),
   getById: (id) => api.get(`/integrations/${id}`),
   create: (data) => api.post('/integrations', data),
   update: (id, data) => api.put(`/integrations/${id}`, data),
@@ -127,7 +141,7 @@ export const integrationsAPI = {
 
 // Tooltips
 export const tooltipsAPI = {
-  getAll: (params) => api.get('/tooltips', { params }),
+  getAll: (params) => getRecordList('/tooltips', params),
   getById: (id) => api.get(`/tooltips/${id}`),
   create: (data) => api.post('/tooltips', data),
   update: (id, data) => api.put(`/tooltips/${id}`, data),
@@ -139,7 +153,7 @@ export const tooltipsAPI = {
 
 // Checklists
 export const checklistsAPI = {
-  getAll: (params) => api.get('/checklists', { params }),
+  getAll: (params) => getRecordList('/checklists', params),
   getById: (id) => api.get(`/checklists/${id}`),
   create: (data) => api.post('/checklists', data),
   update: (id, data) => api.put(`/checklists/${id}`, data),
@@ -151,7 +165,7 @@ export const checklistsAPI = {
 
 // Progress
 export const progressAPI = {
-  getAll: (params) => api.get('/progress', { params }),
+  getAll: (params) => getRecordList('/progress', params),
   getById: (id) => api.get(`/progress/${id}`),
   getByUser: (userId) => api.get(`/users/${userId}/progress`),
   create: (data) => api.post('/progress', data),
@@ -160,7 +174,7 @@ export const progressAPI = {
 
 // A/B Tests
 export const abTestsAPI = {
-  getAll: (params) => api.get('/ab-tests', { params }),
+  getAll: (params) => getRecordList('/ab-tests', params),
   getById: (id) => api.get(`/ab-tests/${id}`),
   create: (data) => api.post('/ab-tests', data),
   update: (id, data) => api.put(`/ab-tests/${id}`, data),
@@ -172,7 +186,7 @@ export const abTestsAPI = {
 
 // Triggers
 export const triggersAPI = {
-  getAll: (params) => api.get('/triggers', { params }),
+  getAll: (params) => getRecordList('/triggers', params),
   getById: (id) => api.get(`/triggers/${id}`),
   create: (data) => api.post('/triggers', data),
   update: (id, data) => api.put(`/triggers/${id}`, data),
@@ -184,7 +198,7 @@ export const triggersAPI = {
 
 // Personalization
 export const personalizationAPI = {
-  getAll: (params) => api.get('/personalization', { params }),
+  getAll: (params) => getRecordList('/personalization', params),
   getById: (id) => api.get(`/personalization/${id}`),
   create: (data) => api.post('/personalization', data),
   update: (id, data) => api.put(`/personalization/${id}`, data),
@@ -196,7 +210,7 @@ export const personalizationAPI = {
 
 // Notifications
 export const notificationsAPI = {
-  getAll: (params) => api.get('/notifications', { params }),
+  getAll: (params) => getRecordList('/notifications', params),
   getById: (id) => api.get(`/notifications/${id}`),
   create: (data) => api.post('/notifications', data),
   update: (id, data) => api.put(`/notifications/${id}`, data),
@@ -208,7 +222,7 @@ export const notificationsAPI = {
 
 // PTO Requests
 export const ptoRequestsAPI = {
-  getAll: (params) => api.get('/pto-requests', { params }),
+  getAll: (params) => getRecordList('/pto-requests', params),
   getById: (id) => api.get(`/pto-requests/${id}`),
   create: (data) => api.post('/pto-requests', data),
   update: (id, data) => api.put(`/pto-requests/${id}`, data),
@@ -220,7 +234,7 @@ export const ptoRequestsAPI = {
 
 // Mentor Matches
 export const mentorMatchesAPI = {
-  getAll: (params) => api.get('/mentor-matches', { params }),
+  getAll: (params) => getRecordList('/mentor-matches', params),
   getById: (id) => api.get(`/mentor-matches/${id}`),
   create: (data) => api.post('/mentor-matches', data),
   update: (id, data) => api.put(`/mentor-matches/${id}`, data),
@@ -232,7 +246,7 @@ export const mentorMatchesAPI = {
 
 // Feedback
 export const feedbackAPI = {
-  getAll: (params) => api.get('/feedback', { params }),
+  getAll: (params) => getRecordList('/feedback', params),
   getById: (id) => api.get(`/feedback/${id}`),
   create: (data) => api.post('/feedback', data),
   update: (id, data) => api.put(`/feedback/${id}`, data),
@@ -244,7 +258,7 @@ export const feedbackAPI = {
 
 // Training Recommendations
 export const trainingAPI = {
-  getAll: (params) => api.get('/training-recommendations', { params }),
+  getAll: (params) => getRecordList('/training-recommendations', params),
   getById: (id) => api.get(`/training-recommendations/${id}`),
   create: (data) => api.post('/training-recommendations', data),
   update: (id, data) => api.put(`/training-recommendations/${id}`, data),
@@ -256,7 +270,7 @@ export const trainingAPI = {
 
 // AI Checklists
 export const aiChecklistsAPI = {
-  getAll: (params) => api.get('/ai-checklists', { params }),
+  getAll: (params) => getRecordList('/ai-checklists', params),
   getById: (id) => api.get(`/ai-checklists/${id}`),
   create: (data) => api.post('/ai-checklists', data),
   update: (id, data) => api.put(`/ai-checklists/${id}`, data),
@@ -268,7 +282,7 @@ export const aiChecklistsAPI = {
 
 // AI Progress
 export const aiProgressAPI = {
-  getAll: (params) => api.get('/ai-progress', { params }),
+  getAll: (params) => getRecordList('/ai-progress', params),
   getById: (id) => api.get(`/ai-progress/${id}`),
   create: (data) => api.post('/ai-progress', data),
   update: (id, data) => api.put(`/ai-progress/${id}`, data),
@@ -308,7 +322,7 @@ export const aiGenerateAPI = {
   analyzeProgress: (data) => api.post('/ai/analyze/progress', data),
   // Apply pass 5 backlog
   predictProgress: (data) => api.post('/ai/predict-progress', data),
-  complianceAudit: (data) => api.post('/ai/compliance-audit', data),
+  complianceAudit: (data, nativeRequestOptions = {}) => api.post('/ai/compliance-audit', data, nativeRequestOptions),
 };
 
 export default api;

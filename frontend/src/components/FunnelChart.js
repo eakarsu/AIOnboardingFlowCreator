@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+const API_BASE = (process.env.REACT_APP_API_URL || '/api').replace(/\/+$/, '');
 
 // VIZ 1 — Funnel conversion chart per onboarding step.
 export default function FunnelChart() {
@@ -7,7 +8,7 @@ export default function FunnelChart() {
 
   useEffect(() => {
     const token = (typeof localStorage !== 'undefined' && localStorage.getItem('token')) || '';
-    fetch('/api/custom-views/funnel', {
+    fetch(`${API_BASE}/custom-views/funnel`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))

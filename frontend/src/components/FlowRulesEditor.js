@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+const API_BASE = (process.env.REACT_APP_API_URL || '/api').replace(/\/+$/, '');
 
 // NON-VIZ 2 — CRUD editor for onboarding flow step branching rules.
 const EMPTY = { step_key: '', condition_expr: '', next_step: '', priority: 1, active: true };
@@ -19,7 +20,7 @@ export default function FlowRulesEditor() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/custom-views/rules', { headers: authHeaders() });
+      const res = await fetch(`${API_BASE}/custom-views/rules`, { headers: authHeaders() });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       setRules(data.rules || []);
@@ -36,7 +37,7 @@ export default function FlowRulesEditor() {
     e.preventDefault();
     setError(null);
     try {
-      const url = editingId ? `/api/custom-views/rules/${editingId}` : '/api/custom-views/rules';
+      const url = editingId ? `${API_BASE}/custom-views/rules/${editingId}` : `${API_BASE}/custom-views/rules`;
       const method = editingId ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(draft) });
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -51,7 +52,7 @@ export default function FlowRulesEditor() {
   const remove = async (id) => {
     setError(null);
     try {
-      const res = await fetch(`/api/custom-views/rules/${id}`, { method: 'DELETE', headers: authHeaders() });
+      const res = await fetch(`${API_BASE}/custom-views/rules/${id}`, { method: 'DELETE', headers: authHeaders() });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       await load();
     } catch (e) {

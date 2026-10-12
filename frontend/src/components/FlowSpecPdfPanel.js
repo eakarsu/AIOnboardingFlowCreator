@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+const API_BASE = (process.env.REACT_APP_API_URL || '/api').replace(/\/+$/, '');
 
 // NON-VIZ 1 — Download/preview the onboarding flow spec as a PDF.
 export default function FlowSpecPdfPanel() {
@@ -10,7 +11,7 @@ export default function FlowSpecPdfPanel() {
     setError(null);
     try {
       const token = (typeof localStorage !== 'undefined' && localStorage.getItem('token')) || '';
-      const res = await fetch('/api/custom-views/spec-pdf', {
+      const res = await fetch(`${API_BASE}/custom-views/spec-pdf`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);

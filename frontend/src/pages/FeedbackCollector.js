@@ -3,6 +3,7 @@ import { MessageSquare, ThumbsUp, ThumbsDown, AlertTriangle, Sparkles, CheckCirc
 import { DataTable } from '../components/DataTable';
 import { feedbackAPI, aiGenerateAPI } from '../services/api';
 import { useToast } from '../components/Toast';
+import FormattedAIReport, { FormattedAIValue } from '../components/FormattedAIReport';
 
 const sampleData = [
   { user_name: 'Emily Chang', feedback_type: 'suggestion', category: 'feature', subject: 'Dark mode support for the dashboard', content: 'I work late hours and the bright white dashboard is really hard on my eyes. Would love a dark mode toggle, especially for the analytics charts and data tables.', priority: 'medium', status: 'new' },
@@ -133,43 +134,7 @@ const FeedbackForm = ({ data, onChange }) => {
         style={{ width: '100%', padding: '12px', marginBottom: 16, background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 600 }}>
         <Sparkles size={18} /> {aiLoading ? 'Analyzing...' : 'Analyze with AI'}
       </button>
-      {aiResult && (
-        <div style={{ background: 'linear-gradient(135deg, #faf5ff, #f3e8ff)', padding: 16, borderRadius: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <Sparkles size={16} style={{ color: '#8b5cf6' }} />
-            <span style={{ fontWeight: 600, color: '#7c3aed' }}>AI Analysis</span>
-          </div>
-          {typeof aiResult === 'object' ? (
-            <div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                {aiResult.sentiment && <span style={{ padding: '4px 12px', borderRadius: 16, fontSize: 12, background: getSentimentColor(aiResult.sentiment) + '30', color: getSentimentColor(aiResult.sentiment) }}>{aiResult.sentiment}</span>}
-                {aiResult.urgency && <span style={{ padding: '4px 12px', borderRadius: 16, fontSize: 12, background: '#f1f5f9', color: '#64748b' }}>Urgency: {aiResult.urgency}</span>}
-              </div>
-              {aiResult.analysis && <p style={{ color: '#581c87', fontSize: 14, marginBottom: 12 }}>{aiResult.analysis}</p>}
-              {aiResult.action_items?.length > 0 && (
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#7c3aed', marginBottom: 8 }}>Suggested Actions:</div>
-                  <ul style={{ margin: 0, paddingLeft: 20 }}>
-                    {aiResult.action_items.map((item, i) => (
-                      <li key={i} style={{ fontSize: 13, color: '#581c87', marginBottom: 4 }}>
-                        {typeof item === 'object' ? `${item.action} - ${item.owner} (${item.priority})` : item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {aiResult.response_suggestion && (
-                <div style={{ marginTop: 12, padding: 12, background: 'white', borderRadius: 8 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#7c3aed', marginBottom: 4 }}>Suggested Response:</div>
-                  <p style={{ color: '#581c87', fontSize: 13, margin: 0 }}>{aiResult.response_suggestion}</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p style={{ color: '#581c87', fontSize: 14, whiteSpace: 'pre-wrap' }}>{aiResult}</p>
-          )}
-        </div>
-      )}
+      {aiResult !== null && <FormattedAIReport response={aiResult} title="Feedback analysis" />}
     </div>
   );
 };
@@ -275,15 +240,11 @@ const FeedbackCollector = () => {
     { key: 'category', label: 'Category' },
     { key: 'content', label: 'Content' },
     { key: 'sentiment', label: 'Sentiment', render: (v) => v || '-' },
-    { key: 'sentiment_score', label: 'Sentiment Score', render: (v) => v ? `${(v * 100).toFixed(0)}%` : '-' },
+    { key: 'sentiment_score', label: 'Sentiment Score', render: (v) => v == null ? '-' : `${(v * 100).toFixed(0)}%` },
     { key: 'priority', label: 'Priority' },
     { key: 'status', label: 'Status', render: (v) => v?.replace('_', ' ') },
-    { key: 'ai_analysis', label: 'AI Analysis', render: (v) => v || '-' },
-    { key: 'ai_action_items', label: 'Action Items', render: (v) => {
-      if (!v) return '-';
-      const items = typeof v === 'string' ? JSON.parse(v) : v;
-      return items.map(i => typeof i === 'object' ? i.action : i).join('; ');
-    }},
+    { key: 'ai_analysis', label: 'AI Analysis', render: (v) => v == null ? '-' : <FormattedAIValue value={v} /> },
+    { key: 'ai_action_items', label: 'Action Items', render: (v) => v == null ? '-' : <FormattedAIValue value={v} /> },
     { key: 'created_at', label: 'Created At', render: (v) => v ? new Date(v).toLocaleString() : '-' }
   ];
 

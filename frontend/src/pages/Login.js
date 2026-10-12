@@ -5,6 +5,8 @@ import { authAPI } from '../services/api';
 import { GitBranch, Mail, Lock, Eye, EyeOff, Loader, User, ArrowLeft } from 'lucide-react';
 
 const Login = () => {
+  const [demoLoginBusy, setDemoLoginBusy] = useState(false);
+
   const [isLogin, setIsLogin] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -15,7 +17,7 @@ const Login = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, register } = useAuth();
+  const { login, demoLogin, register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -59,9 +61,17 @@ const Login = () => {
     }
   };
 
-  const fillDemoCredentials = () => {
-    setEmail(process.env.REACT_APP_DEMO_EMAIL || '');
-    setPassword(process.env.REACT_APP_DEMO_PASSWORD || '');
+  const handleDemoLogin = async () => {
+    if (demoLoginBusy) return;
+    setDemoLoginBusy(true);
+    setError('');
+    try {
+      const result = await demoLogin();
+      if (result.success) navigate('/');
+      else setError(result.error);
+    } finally {
+      setDemoLoginBusy(false);
+    }
   };
 
   const inputStyle = {
@@ -179,9 +189,9 @@ const Login = () => {
         ) : (
           <>
             {/* Demo Button */}
-            <button
+            <button disabled={demoLoginBusy || loading}
               type="button"
-              onClick={fillDemoCredentials}
+              onClick={handleDemoLogin}
               style={{
                 width: '100%', padding: '12px 16px',
                 background: 'linear-gradient(135deg, #10b981, #059669)',
@@ -191,7 +201,7 @@ const Login = () => {
               }}
             >
               <User size={18} />
-              Auto Fill Demo Credentials
+              Log In as Demo
             </button>
 
             <div style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8', marginBottom: 20 }}>

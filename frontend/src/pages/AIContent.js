@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Wand2, MessageSquare, Mail, CheckSquare, Bell, FileText, Loader, Copy, Check, ChevronRight, Circle } from 'lucide-react';
 import { aiContentAPI, aiGenerateAPI } from '../services/api';
+import FormattedAIReport, { FormattedAIValue } from '../components/FormattedAIReport';
 
 const GeneratorCard = ({ icon: Icon, title, description, onClick, loading }) => (
   <div
@@ -257,7 +258,7 @@ const ContentRenderer = ({ data, type }) => {
           }}>
             <Circle size={8} color="#6366f1" style={{ marginTop: 6, flexShrink: 0 }} />
             <span style={{ fontSize: 14, color: '#1e293b', lineHeight: 1.6 }}>
-              {typeof item === 'object' ? (item.title || item.name || item.content || JSON.stringify(item)) : item}
+              {typeof item === 'object' ? (item.title || item.name || item.content || <FormattedAIValue value={item} />) : item}
             </span>
           </div>
         ))}
@@ -286,9 +287,9 @@ const ContentRenderer = ({ data, type }) => {
             }}>
               {key.replace(/_/g, ' ')}
             </span>
-            <span style={{ fontSize: 14, color: '#1e293b' }}>
-              {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-            </span>
+            <div style={{ fontSize: 14, color: '#1e293b' }}>
+              {typeof value === 'object' ? <FormattedAIValue value={value} /> : String(value)}
+            </div>
           </div>
         ))}
       </div>
@@ -304,6 +305,8 @@ const AIContent = () => {
   const [generating, setGenerating] = useState(null);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [activeGenerator, setActiveGenerator] = useState(null);
+  const [drafts, setDrafts] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -394,7 +397,7 @@ const AIContent = () => {
   };
 
   const getContentData = (data) => {
-    return data.content || data.items || data.steps || data.notification || data.emails || data.improved;
+    return data.content ?? data.items ?? data.steps ?? data.notification ?? data.emails ?? data.improved ?? data;
   };
 
   const handleCopy = (data) => {
@@ -408,20 +411,25 @@ const AIContent = () => {
     <div className="fade-in">
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1e293b', marginBottom: 8 }}>AI Content Generator</h1>
-        <p style={{ color: '#64748b' }}>Generate onboarding content using AI. Click any card below to generate.</p>
+        <p style={{ color: '#64748b' }}>Choose a generator, fill its request with an example, review every field, then generate when ready.</p>
       </div>
 
       {/* Generators Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 32 }}>
         {generators.map((gen) => (
           <div key={gen.id}>
-            <GeneratorCard {...gen} loading={generating === gen.id} onClick={() => handleGenerate(gen)} />
+            <GeneratorCard {...gen} loading={generating === gen.id} onClick={() => setActiveGenerator(gen.id)} />
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8, padding: '8px 12px', background: '#f8fafc', borderRadius: 8 }}>
-              <span style={{ fontSize: 11, color: '#94a3b8', alignSelf: 'center', marginRight: 4 }}>Samples:</span>
+              <span style={{ fontSize: 11, color: '#64748b', alignSelf: 'center', marginRight: 4 }}>Fill all fields:</span>
               {gen.samples.map((sample, idx) => (
                 <button
                   key={idx}
-                  onClick={(e) => { e.stopPropagation(); handleGenerate(gen, sample.params); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveGenerator(gen.id);
+                    setDrafts((current) => ({ ...current, [gen.id]: { ...gen.defaultParams, ...sample.params } }));
+                    setResult(null);
+                  }}
                   disabled={generating === gen.id}
                   style={{
                     padding: '4px 10px',
@@ -442,6 +450,19 @@ const AIContent = () => {
                 </button>
               ))}
             </div>
+            {activeGenerator === gen.id && (() => {
+              const values = drafts[gen.id] || { ...gen.defaultParams };
+              return <form onSubmit={(event) => { event.preventDefault(); handleGenerate(gen, values); }} style={{ marginTop: 12, padding: 16, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                <h4 style={{ margin: '0 0 12px', color: '#1e293b' }}>{gen.title} request</h4>
+                <div style={{ display: 'grid', gap: 12 }}>
+                  {Object.entries(values).map(([key, value]) => <label key={key} style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 600, color: '#475569' }}>
+                    {key.replace(/([A-Z])/g, ' $1').replace(/[_-]/g, ' ').replace(/^./, (letter) => letter.toUpperCase())}
+                    {typeof value === 'number' ? <input type="number" value={value} min="1" onChange={(event) => setDrafts((current) => ({ ...current, [gen.id]: { ...values, [key]: Number(event.target.value) } }))} style={{ width: '100%', padding: 9, border: '1px solid #cbd5e1', borderRadius: 7, font: 'inherit' }} /> : String(value).length > 70 || /context|goal|description|audience|features/i.test(key) ? <textarea rows={3} value={String(value ?? '')} onChange={(event) => setDrafts((current) => ({ ...current, [gen.id]: { ...values, [key]: event.target.value } }))} style={{ width: '100%', padding: 9, border: '1px solid #cbd5e1', borderRadius: 7, font: 'inherit', resize: 'vertical' }} /> : <input value={String(value ?? '')} onChange={(event) => setDrafts((current) => ({ ...current, [gen.id]: { ...values, [key]: event.target.value } }))} style={{ width: '100%', padding: 9, border: '1px solid #cbd5e1', borderRadius: 7, font: 'inherit' }} />}
+                  </label>)}
+                </div>
+                <button type="submit" disabled={generating === gen.id} style={{ marginTop: 14, padding: '10px 16px', background: '#5b55d6', color: 'white', border: 0, borderRadius: 8, fontWeight: 600, cursor: generating === gen.id ? 'wait' : 'pointer' }}>{generating === gen.id ? 'Generating…' : 'Generate content'}</button>
+              </form>;
+            })()}
           </div>
         ))}
       </div>
@@ -485,7 +506,7 @@ const AIContent = () => {
               {copied ? 'Copied!' : 'Copy'}
             </button>
           </div>
-          <ContentRenderer data={getContentData(result.data)} type={result.type} />
+          <FormattedAIReport response={result.data} title={result.title} />
           {result.data.tokensUsed && (
             <div style={{
               marginTop: 16,
@@ -525,7 +546,7 @@ const AIContent = () => {
           </div>
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>
-            {content.slice(0, 10).map((item) => (
+            {content.map((item) => (
               <div key={item.id} style={{
                 background: 'white',
                 borderRadius: 12,
@@ -541,9 +562,9 @@ const AIContent = () => {
                   <span style={{ fontWeight: 600, color: '#1e293b' }}>{item.title}</span>
                   <span style={{ fontSize: 12, color: '#94a3b8' }}>{new Date(item.created_at).toLocaleString()}</span>
                 </div>
-                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, marginBottom: 12 }}>
-                  {item.generated_content?.substring(0, 150)}...
-                </p>
+                <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 12, maxHeight: 220, overflow: 'auto' }}>
+                  <FormattedAIValue value={item.generated_content ?? item.content ?? 'No saved result'} />
+                </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <span style={{ padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 500, background: '#f1f5f9', color: '#64748b' }}>
                     {item.content_type}

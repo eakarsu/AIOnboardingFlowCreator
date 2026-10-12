@@ -81,14 +81,14 @@ const Progress = () => {
   const columns = [
     { key: 'user_id', label: 'User', render: (v, r) => (<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><div style={{ width: 36, height: 36, background: '#ede9fe', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User size={18} color="#7c3aed" /></div><div><div style={{ fontWeight: 500 }}>User #{v}</div><div style={{ fontSize: 12, color: '#64748b' }}>Flow: {r.flow_name || `#${r.flow_id}`}</div></div></div>) },
     { key: 'current_step', label: 'Progress', render: (v, r) => (<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ fontSize: 13 }}>{v} / {r.total_steps}</span></div>) },
-    { key: 'percentage_complete', label: 'Completion', render: (v) => (<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 80, height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}><div style={{ width: `${v || 0}%`, height: '100%', background: v >= 100 ? '#10b981' : '#6366f1', borderRadius: 3 }} /></div><span style={{ fontSize: 13, color: '#64748b' }}>{(v || 0).toFixed(0)}%</span></div>) },
+    { key: 'percentage_complete', label: 'Completion', render: (v) => (<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 80, height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}><div style={{ width: `${Number(v) || 0}%`, height: '100%', background: Number(v) >= 100 ? '#10b981' : '#6366f1', borderRadius: 3 }} /></div><span style={{ fontSize: 13, color: '#64748b' }}>{(Number(v) || 0).toFixed(0)}%</span></div>) },
     { key: 'completed_at', label: 'Status', render: (v) => v ? (<span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#10b981' }}><CheckCircle size={14} /> Completed</span>) : (<span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#f59e0b' }}><Clock size={14} /> In Progress</span>) }
   ];
 
   const detailFields = [
     { key: 'id', label: 'ID' }, { key: 'user_id', label: 'User ID' }, { key: 'flow_id', label: 'Flow ID' },
     { key: 'current_step', label: 'Current Step' }, { key: 'total_steps', label: 'Total Steps' },
-    { key: 'percentage_complete', label: 'Completion %', render: (v) => `${(v || 0).toFixed(1)}%` },
+    { key: 'percentage_complete', label: 'Completion %', render: (v) => `${(Number(v) || 0).toFixed(1)}%` },
     { key: 'started_at', label: 'Started At', render: (v) => v ? new Date(v).toLocaleString() : '-' },
     { key: 'completed_at', label: 'Completed At', render: (v) => v ? new Date(v).toLocaleString() : 'Not completed' },
     { key: 'last_activity', label: 'Last Activity', render: (v) => v ? new Date(v).toLocaleString() : '-' }

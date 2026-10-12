@@ -1,3 +1,6 @@
+import NativeAIControls from "../components/NativeAIControls";
+import useNativeAIRequest from "../components/useNativeAIRequest";
+import FormattedAIReport from "../components/FormattedAIReport";
 // Apply pass 5 — Compliance Audit page (PRODUCT-DECISION default domains:
 // hr_onboarding, security_training, code_of_conduct).
 import React, { useState } from 'react';
@@ -7,6 +10,8 @@ import { aiGenerateAPI } from '../services/api';
 const DEFAULT_DOMAINS = ['hr_onboarding', 'security_training', 'code_of_conduct'];
 
 export default function ComplianceAudit() {
+  const nativeAIRequest = useNativeAIRequest();
+
   const [flowSummary, setFlowSummary] = useState('');
   const [completed, setCompleted] = useState('');
   const [outstanding, setOutstanding] = useState('');
@@ -26,7 +31,7 @@ export default function ComplianceAudit() {
         domains: domains.split(',').map((s) => s.trim()).filter(Boolean),
         compliance_policy_text: policy,
       };
-      const r = await aiGenerateAPI.complianceAudit(payload);
+      const r = await nativeAIRequest.run((signal) => aiGenerateAPI.complianceAudit(payload, { signal }));
       setResult(r.data);
     } catch (e) {
       const data = e.response?.data;
@@ -41,7 +46,7 @@ export default function ComplianceAudit() {
   };
 
   return (
-    <div style={{ padding: 24 }}>
+    <NativeAIControls busy={nativeAIRequest.busy} onCancel={nativeAIRequest.cancel} context="Onboarding Flow Creator"><div style={{ padding: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <ShieldCheck size={24} style={{ color: '#0ea5e9' }} />
         <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Onboarding Compliance Audit</h1>
@@ -50,11 +55,11 @@ export default function ComplianceAudit() {
         AI-driven gap analysis across compliance domains. Defaults: <code>hr_onboarding, security_training, code_of_conduct</code>.
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, maxWidth: 720 }}>
-        <textarea value={flowSummary} onChange={(e) => setFlowSummary(e.target.value)} placeholder="Flow summary (optional)" rows={3} style={{ padding: 10, border: '1px solid #e2e8f0', borderRadius: 8 }} />
-        <input value={completed} onChange={(e) => setCompleted(e.target.value)} placeholder="Completed steps (comma-separated)" style={{ padding: 10, border: '1px solid #e2e8f0', borderRadius: 8 }} />
-        <input value={outstanding} onChange={(e) => setOutstanding(e.target.value)} placeholder="Outstanding steps (comma-separated)" style={{ padding: 10, border: '1px solid #e2e8f0', borderRadius: 8 }} />
-        <input value={domains} onChange={(e) => setDomains(e.target.value)} placeholder="Domains (comma-separated)" style={{ padding: 10, border: '1px solid #e2e8f0', borderRadius: 8 }} />
-        <textarea value={policy} onChange={(e) => setPolicy(e.target.value)} placeholder="Compliance policy text (excerpt, optional)" rows={4} style={{ padding: 10, border: '1px solid #e2e8f0', borderRadius: 8 }} />
+        <textarea data-ai-field="flowSummary" value={flowSummary} onChange={(e) => setFlowSummary(e.target.value)} placeholder="Flow summary (optional)" rows={3} style={{ padding: 10, border: '1px solid #e2e8f0', borderRadius: 8 }} />
+        <input data-ai-field="completed" value={completed} onChange={(e) => setCompleted(e.target.value)} placeholder="Completed steps (comma-separated)" style={{ padding: 10, border: '1px solid #e2e8f0', borderRadius: 8 }} />
+        <input data-ai-field="outstanding" value={outstanding} onChange={(e) => setOutstanding(e.target.value)} placeholder="Outstanding steps (comma-separated)" style={{ padding: 10, border: '1px solid #e2e8f0', borderRadius: 8 }} />
+        <input data-ai-field="domains" value={domains} onChange={(e) => setDomains(e.target.value)} placeholder="Domains (comma-separated)" style={{ padding: 10, border: '1px solid #e2e8f0', borderRadius: 8 }} />
+        <textarea data-ai-field="policy" value={policy} onChange={(e) => setPolicy(e.target.value)} placeholder="Compliance policy text (excerpt, optional)" rows={4} style={{ padding: 10, border: '1px solid #e2e8f0', borderRadius: 8 }} />
         <button onClick={run} disabled={loading} style={{ padding: 12, background: 'linear-gradient(135deg, #0ea5e9, #6366f1)', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 600 }}>
           <Sparkles size={18} /> {loading ? 'Auditing...' : 'Run Compliance Audit'}
         </button>
@@ -64,10 +69,8 @@ export default function ComplianceAudit() {
         <div style={{ marginTop: 16, padding: 12, background: '#fee2e2', color: '#991b1b', borderRadius: 8 }}>{error}</div>
       )}
       {result && (
-        <pre style={{ marginTop: 16, padding: 12, background: '#0f172a', color: '#bbf7d0', borderRadius: 8, overflowX: 'auto', fontSize: 12 }}>
-          {JSON.stringify(result, null, 2)}
-        </pre>
+        <FormattedAIReport response={result} />
       )}
-    </div>
+    </div></NativeAIControls>
   );
 }

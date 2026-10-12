@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+const API_BASE = (process.env.REACT_APP_API_URL || '/api').replace(/\/+$/, '');
 
 // VIZ 2 — Drop-off heatmap (step x cohort).
 export default function DropOffHeatmap() {
@@ -7,7 +8,7 @@ export default function DropOffHeatmap() {
 
   useEffect(() => {
     const token = (typeof localStorage !== 'undefined' && localStorage.getItem('token')) || '';
-    fetch('/api/custom-views/heatmap', {
+    fetch(`${API_BASE}/custom-views/heatmap`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))

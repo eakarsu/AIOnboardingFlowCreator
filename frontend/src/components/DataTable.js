@@ -296,10 +296,11 @@ const DataTable = ({
   const [formLoading, setFormLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const itemsPerPage = 10;
+  const itemsPerPage = 15;
+  const rows = Array.isArray(data) ? data : [];
 
-  const filteredData = data.filter((item) =>
-    Object.values(item).some((value) =>
+  const filteredData = rows.filter((item) =>
+    Object.values(item || {}).some((value) =>
       String(value).toLowerCase().includes(searchQuery.toLowerCase())
     )
   );

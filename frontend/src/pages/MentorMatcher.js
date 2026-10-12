@@ -3,6 +3,7 @@ import { Users, Target, Star, MessageCircle, Sparkles, X } from 'lucide-react';
 import { DataTable } from '../components/DataTable';
 import { mentorMatchesAPI, aiGenerateAPI } from '../services/api';
 import { useToast } from '../components/Toast';
+import FormattedAIReport, { FormattedAIValue } from '../components/FormattedAIReport';
 import { useEffect } from 'react';
 
 const sampleData = [
@@ -65,7 +66,7 @@ const MentorForm = ({ data, onChange }) => {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '10px 12px', background: '#f8fafc', borderRadius: 8, marginBottom: 16 }}>
         <span style={{ fontSize: 11, color: '#94a3b8', alignSelf: 'center', marginRight: 4 }}>Load sample:</span>
         {sampleData.map((sample, i) => (
-          <button key={i} type="button" onClick={() => { onChange({ ...data, ...sample, mentor_name: '', matching_score: 0 }); setAiResult(null); setSkillInput(''); }}
+          <button key={i} type="button" onClick={() => { onChange({ ...data, ...sample, mentor_name: '', matching_score: 0 }); setAiResult(null); setSkillInput(sample.skills_to_develop[0]); }}
             style={{ padding: '4px 10px', fontSize: 11, fontWeight: 500, background: 'linear-gradient(135deg, #ede9fe, #f3e8ff)', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 20, cursor: 'pointer' }}>
             {['Junior Dev', 'Career Switch', 'Leadership', 'Cross-functional'][i]}
           </button>
@@ -120,36 +121,7 @@ const MentorForm = ({ data, onChange }) => {
         style={{ width: '100%', padding: '12px', marginBottom: 16, background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 600 }}>
         <Sparkles size={18} /> {aiLoading ? 'Finding Match...' : 'Find AI-Powered Match'}
       </button>
-      {aiResult && (
-        <div style={{ background: 'linear-gradient(135deg, #faf5ff, #f3e8ff)', padding: 16, borderRadius: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <Sparkles size={16} style={{ color: '#8b5cf6' }} />
-            <span style={{ fontWeight: 600, color: '#7c3aed' }}>AI Match Result</span>
-          </div>
-          {typeof aiResult === 'object' ? (
-            <div>
-              {aiResult.recommended_mentor && (
-                <div style={{ padding: 12, background: 'white', borderRadius: 8, marginBottom: 12 }}>
-                  <div style={{ fontWeight: 600, color: '#7c3aed', marginBottom: 4 }}>Recommended: {aiResult.recommended_mentor.name}</div>
-                  <div style={{ fontSize: 13, color: '#581c87' }}>Match Score: {aiResult.recommended_mentor.matching_score}%</div>
-                  <p style={{ color: '#581c87', fontSize: 14, marginTop: 8 }}>{aiResult.recommended_mentor.match_reason}</p>
-                </div>
-              )}
-              {aiResult.development_plan && <p style={{ color: '#581c87', fontSize: 14, marginBottom: 8 }}><strong>Development Plan:</strong> {aiResult.development_plan}</p>}
-              {aiResult.session_recommendations?.length > 0 && (
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#7c3aed', marginBottom: 4 }}>Suggested Topics:</div>
-                  <ul style={{ margin: 0, paddingLeft: 20, color: '#581c87', fontSize: 13 }}>
-                    {aiResult.session_recommendations.map((t, i) => <li key={i}>{t}</li>)}
-                  </ul>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p style={{ color: '#581c87', fontSize: 14, whiteSpace: 'pre-wrap' }}>{aiResult}</p>
-          )}
-        </div>
-      )}
+      {aiResult !== null && <FormattedAIReport response={aiResult} title="Mentor match" />}
     </div>
   );
 };
@@ -270,11 +242,11 @@ const MentorMatcher = () => {
     { key: 'mentor_name', label: 'Mentor', render: (v) => v || 'TBD' },
     { key: 'department', label: 'Department' },
     { key: 'skills_to_develop', label: 'Skills', render: (v) => parseSkills(v).join(', ') || '-' },
-    { key: 'matching_score', label: 'Match Score', render: (v) => v ? `${v}%` : '-' },
+    { key: 'matching_score', label: 'Match Score', render: (v) => v == null ? '-' : `${v}%` },
     { key: 'match_reason', label: 'Match Reason' },
     { key: 'status', label: 'Status' },
     { key: 'session_count', label: 'Sessions', render: (v) => v || 0 },
-    { key: 'ai_recommendation', label: 'AI Recommendation', render: (v) => v || '-' },
+    { key: 'ai_recommendation', label: 'AI Recommendation', render: (v) => v == null ? '-' : <FormattedAIValue value={v} /> },
     { key: 'created_at', label: 'Created At', render: (v) => v ? new Date(v).toLocaleString() : '-' }
   ];
 

@@ -3,6 +3,7 @@ import { GraduationCap, Clock, TrendingUp, Sparkles, X } from 'lucide-react';
 import { DataTable } from '../components/DataTable';
 import { trainingAPI, aiGenerateAPI } from '../services/api';
 import { useToast } from '../components/Toast';
+import FormattedAIReport, { FormattedAIValue } from '../components/FormattedAIReport';
 
 const sampleData = [
   { user_name: 'Chris Nguyen', current_role: 'Senior Software Engineer', target_role: 'Technical Lead', skill_gap: ['System Architecture', 'Team Mentoring', 'Technical Decision Making'], priority: 'high', status: 'pending' },
@@ -68,7 +69,7 @@ const TrainingForm = ({ data, onChange }) => {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '10px 12px', background: '#f8fafc', borderRadius: 8, marginBottom: 16 }}>
         <span style={{ fontSize: 11, color: '#94a3b8', alignSelf: 'center', marginRight: 4 }}>Load sample:</span>
         {sampleData.map((sample, i) => (
-          <button key={i} type="button" onClick={() => { onChange({ ...data, ...sample, ai_learning_path: '', estimated_duration: '' }); setSkillInput(''); setAiResult(null); }}
+          <button key={i} type="button" onClick={() => { onChange({ ...data, ...sample, ai_learning_path: '', estimated_duration: '' }); setSkillInput(sample.skill_gap[0]); setAiResult(null); }}
             style={{ padding: '4px 10px', fontSize: 11, fontWeight: 500, background: 'linear-gradient(135deg, #ede9fe, #f3e8ff)', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: 20, cursor: 'pointer' }}>
             {['Dev to Lead', 'Analyst to DS', 'Designer to Mgr', 'Support to CS'][i]}
           </button>
@@ -133,39 +134,7 @@ const TrainingForm = ({ data, onChange }) => {
         style={{ width: '100%', padding: '12px', marginBottom: 16, background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 600 }}>
         <Sparkles size={18} /> {aiLoading ? 'Generating...' : 'Generate AI Training Plan'}
       </button>
-      {aiResult && (
-        <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', padding: 16, borderRadius: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <Sparkles size={16} style={{ color: '#10b981' }} />
-            <span style={{ fontWeight: 600, color: '#166534' }}>AI Generated Plan</span>
-            {typeof aiResult === 'object' && aiResult.estimated_duration && <span style={{ marginLeft: 'auto', fontSize: 12, color: '#166534' }}>{aiResult.estimated_duration}</span>}
-          </div>
-          {typeof aiResult === 'object' ? (
-            <div>
-              {aiResult.skill_gap_analysis && (
-                <div style={{ padding: 12, background: 'white', borderRadius: 8, marginBottom: 12 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#166534', marginBottom: 4 }}>Skill Gap Analysis</div>
-                  {aiResult.skill_gap_analysis.missing_skills?.length > 0 && <div style={{ marginBottom: 4 }}><span style={{ fontSize: 12, color: '#dc2626' }}>Missing:</span> {aiResult.skill_gap_analysis.missing_skills.join(', ')}</div>}
-                  {aiResult.skill_gap_analysis.skills_to_improve?.length > 0 && <div><span style={{ fontSize: 12, color: '#f59e0b' }}>Improve:</span> {aiResult.skill_gap_analysis.skills_to_improve.join(', ')}</div>}
-                </div>
-              )}
-              {aiResult.learning_path && <p style={{ color: '#14532d', fontSize: 14, marginBottom: 12 }}>{aiResult.learning_path}</p>}
-              {aiResult.recommended_courses?.length > 0 && (
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#166534', marginBottom: 8 }}>Recommended Courses:</div>
-                  {aiResult.recommended_courses.map((course, i) => (
-                    <div key={i} style={{ padding: 8, background: 'white', borderRadius: 6, marginBottom: 4, fontSize: 13 }}>
-                      <strong>{course.name}</strong> - {course.provider} ({course.duration})
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <p style={{ color: '#14532d', fontSize: 14, whiteSpace: 'pre-wrap' }}>{aiResult}</p>
-          )}
-        </div>
-      )}
+      {aiResult !== null && <FormattedAIReport response={aiResult} title="Training plan" />}
     </div>
   );
 };
@@ -289,12 +258,8 @@ const TrainingRecommender = () => {
     { key: 'estimated_duration', label: 'Duration', render: (v) => v || 'TBD' },
     { key: 'completion_percentage', label: 'Progress', render: (v) => `${v || 0}%` },
     { key: 'status', label: 'Status', render: (v) => v?.replace('_', ' ') },
-    { key: 'ai_learning_path', label: 'AI Learning Path', render: (v) => v || '-' },
-    { key: 'recommended_courses', label: 'Courses', render: (v) => {
-      if (!v) return '-';
-      const courses = typeof v === 'string' ? JSON.parse(v) : v;
-      return Array.isArray(courses) ? courses.map(c => c.name).join(', ') : '-';
-    }},
+    { key: 'ai_learning_path', label: 'AI Learning Path', render: (v) => v == null ? '-' : <FormattedAIValue value={v} /> },
+    { key: 'recommended_courses', label: 'Courses', render: (v) => v == null ? '-' : <FormattedAIValue value={v} /> },
     { key: 'created_at', label: 'Created At', render: (v) => v ? new Date(v).toLocaleString() : '-' }
   ];
 

@@ -18,7 +18,13 @@ if ((process.env.JWT_SECRET || '').length < 32 || !process.env.GOVERNANCE_TENANT
 }
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      scriptSrcAttr: ["'unsafe-inline'"],
+    },
+  },
+}));
 
 // Rate limiting
 const generalLimiter = rateLimit({
@@ -50,6 +56,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Apply rate limiting
 app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/demo-login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
 app.use('/api', generalLimiter);
@@ -98,6 +105,14 @@ if (process.env.ENABLE_GENERATED_ROUTES === 'true' && process.env.NODE_ENV !== '
 }
 
 // Structured error handler — never leaks stack traces to clients
+
+// Advisory AI reports only; native execution and approval routes stay unchanged.
+const aiWorkspaceSupport = require("../aiWorkspaceAdapters.cjs");
+const aiWorkspaceDatabase = require("./config/database.js");
+app.use('/api/report-workspace', require("../aiWorkspace.cjs").createAIWorkspaceRouter({
+  pool: aiWorkspaceDatabase, authenticateToken: require("./middleware/auth.js").authenticateToken,
+  aiRateLimiter: aiWorkspaceSupport.createWorkspaceLimiter(), features: require("../aiWorkspaceFeatures.json"),
+}));
 app.use((err, req, res, next) => {
   const requestId = req.requestId || 'unknown';
   const logEntry = {

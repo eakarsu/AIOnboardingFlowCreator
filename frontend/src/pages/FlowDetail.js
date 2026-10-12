@@ -4,8 +4,9 @@ import {
   ArrowLeft, Edit2, Trash2, Plus, GripVertical,
   CheckCircle, Clock, Sparkles, BarChart3, Save, Loader, Code
 } from 'lucide-react';
-import { flowsAPI, stepsAPI, aiGenerateAPI } from '../services/api';
+import { flowsAPI, stepsAPI, aiGenerateAPI, recordRows } from '../services/api';
 import { Modal } from '../components/DataTable';
+import { FormattedAIValue } from '../components/FormattedAIReport';
 import { useToast } from '../components/Toast';
 
 const StepCard = ({ step, onEdit, onDelete }) => {
@@ -235,7 +236,7 @@ const FlowDetail = () => {
         flowsAPI.getSteps(id)
       ]);
       setFlow(flowRes.data);
-      setSteps(stepsRes.data);
+      setSteps(recordRows(stepsRes.data));
     } catch (error) {
       console.error('Error fetching flow:', error);
     } finally {
@@ -481,7 +482,7 @@ const FlowDetail = () => {
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#0284c7' }}>AI Analysis</h3>
           </div>
           <div style={{ fontSize: 14, color: '#0369a1', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-            {analysis}
+            <FormattedAIValue value={analysis} />
           </div>
         </div>
       )}
